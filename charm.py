@@ -18,10 +18,10 @@ class CodonUsageTable():
     def __init__(self, url):
         self.url = url
         self.usage_table = {}
-        self.fetchCodonUsageTable()
+        self.fetch_codon_usage_table()
 
 
-    def addToTable(self, codon, aa, frequency):
+    def add_to_table(self, codon, aa, frequency):
         """Add codon and usage frequency to table"""
 
         if aa in self.usage_table:
@@ -32,7 +32,7 @@ class CodonUsageTable():
             self.usage_table[aa] = {}
             self.usage_table[aa][codon] = {'f': frequency}
 
-    def fetchCodonUsageTable(self):
+    def fetch_codon_usage_table(self):
         """Fetch the codon table from http://www.kazusa.or.jp/codon"""
 
         request = Request(self.url)
@@ -67,7 +67,7 @@ class CodonUsageTable():
                     aa = codon_raw[4:5].strip() # Position 5 is the aa in one letter code
                     frequency = float(codon_raw[6:10].strip()) # position 6 to 10 is the usage frequency;
                     # convert to float
-                    self.addToTable(codon, aa, frequency)
+                    self.add_to_table(codon, aa, frequency)
 
 
 class Sequence():
@@ -87,16 +87,16 @@ class Sequence():
             print("Sequence is not a valid CDS!")
         self.harmonized_sequence = ''
         self.codons = []
-        self.splitToCodons()
+        self.split_to_codons()
 
         self.usage_ft = CodonUsageTable('http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?species=4227&aa=1&style=N')
         self.usage_ecoli = CodonUsageTable(
             'http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?species=83333&aa=1&style=N')
 
-        self.harmonizeCodons(self.usage_ft, self.usage_ecoli)
-        self.constructNewSequence()
+        self.harmonize_codons(self.usage_ft, self.usage_ecoli)
+        self.construct_new_sequence()
 
-    def splitToCodons(self):
+    def split_to_codons(self):
         """Split the sequence into codons."""
 
         for codon in chunks(self.original_sequence, 3):
@@ -108,7 +108,7 @@ class Sequence():
                                 'final_df': None,
                                 'aa': str(codon.translate(table=self.translation_table))})
 
-    def harmonizeCodons(self, usage_origin, usage_target):
+    def harmonize_codons(self, usage_origin, usage_target):
         for codon in self.codons:
             aa = codon['aa']
             orig_codon = str(codon['original'])
@@ -133,7 +133,7 @@ class Sequence():
             codon['final_df'] = df
             codon['new'] = new_codon
 
-    def constructNewSequence(self):
+    def construct_new_sequence(self):
         tmp = []
         for codon in self.codons:
             tmp.append(codon['new'])
