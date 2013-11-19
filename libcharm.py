@@ -1,17 +1,38 @@
 #!/usr/bin/env python
 
-"""Charm.py: Simple command line interface for CHarm."""
+"""libcharm.py: Provides codon harmonization functions to front-ends"""
+
+from sys import exit
 
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
 from Bio.Seq import Seq
+from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from Bio.Data import CodonTable
 from bs4 import BeautifulSoup
 
 
 __version__ = "0.1"
+
+
+def open_input_file(input):
+    try:
+        parser = SeqIO.parse(input, 'fasta', IUPAC.unambiguous_dna)
+    except:
+        try:
+            parser = SeqIO.parse(input, 'fasta', IUPAC.unambiguous_rna)
+        except:
+            exit(1)
+    content = []
+    for record in parser:
+        content.append(record)
+    if len(content) > 1:
+        print('More than one sequence found in file! Only the first sequence will be used!')
+
+    seq = content[0].seq
+    return seq
 
 
 class CodonUsageTable():
@@ -73,28 +94,44 @@ class CodonUsageTable():
 class Sequence():
     """Provides methods for storage and manipulation of sequences"""
 
-    def __init__(self, sequence):
+    def __init__(self, sequence, origin_id, host_id):
         # Set translation table for original sequence
         self.translation_table = CodonTable.unambiguous_dna_by_name["Standard"]
         # Reformat and sanitize sequence string (remove whitespaces, change to uppercase)
-        if 'U' in sequence:
-            sequence = sequence.replace('U', 'T')
-
-        self.original_sequence = Seq(''.join(sequence.upper().split()), IUPAC.unambiguous_dna)
-        try:
-            self.translated_sequence = self.original_sequence.translate(table=self.translation_table, cds=True)
-        except:
-            print("Sequence is not a valid CDS!")
+        if type(sequence) is 'str':
+            if 'U' in sequence:
+                sequence = sequence.replace('U', 'T')
+            self.original_sequence = Seq(''.join(sequence.upper().split()), IUPAC.unambiguous_dna)
+        else:
+            self.original_sequence = sequence
+        self.original_translated_sequence = self.translate_sequence(self.original_sequence, cds=True)
         self.harmonized_sequence = ''
         self.codons = []
         self.split_to_codons()
 
-        self.usage_ft = CodonUsageTable('http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?species=4227&aa=1&style=N')
-        self.usage_ecoli = CodonUsageTable(
-            'http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?species=83333&aa=1&style=N')
+        self.usage_origin = CodonUsageTable(
+            'http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?species={}&aa=1&style=N'.format(origin_id))
+        self.usage_host = CodonUsageTable(
+            'http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?species={}&aa=1&style=N'.format(host_id))
 
-        self.harmonize_codons(self.usage_ft, self.usage_ecoli)
+        self.harmonize_codons(self.usage_origin, self.usage_host)
         self.construct_new_sequence()
+
+    def translate_sequence(self, sequence, cds=True):
+        try:
+            translated_sequence = sequence.translate(table=self.translation_table, cds=cds)
+        except:
+            print("Sequence is not a valid CDS!")
+            exit(1)
+        return translated_sequence
+
+    def get_harmonized_codons(self):
+        harmonized_codons = []
+        for codon in self.codons:
+            if str(codon['original']) != str(codon['new']):
+                harmonized_codons.append(codon)
+        return harmonized_codons
+
 
     def split_to_codons(self):
         """Split the sequence into codons."""
@@ -139,7 +176,25 @@ class Sequence():
             tmp.append(codon['new'])
 
         self.harmonized_sequence = Seq(''.join(tmp), IUPAC.unambiguous_dna)
-        print(self.harmonized_sequence)
+        self.harmonized_translated_sequence = self.translate_sequence(self.harmonized_sequence, cds=True)
+
+    def verify_harmonized_sequence(self):
+        if str(self.original_translated_sequence) == str(self.harmonized_translated_sequence):
+            return True
+        else:
+            return False
+
+#    def align_sequences(self, aligner='tcoffee'):
+#        if aligner == 'clustalw':
+#        elif aligner == 'clustalo':
+#        elif aligner == 'tcoffee':
+#            from Bio.Align.Applications import TCoffeeCommandline
+
+#            cline = TCoffeeCommandline()
+#        elif aligner == 'mafft':
+#        elif aligner == 'muscle':
+#        else:
+#            raise NameError('Invalid alignment tool specified: {}'.format(aligner))
 
 
 def chunks(string, n):
@@ -148,10 +203,10 @@ def chunks(string, n):
         yield string[start:start + n]
 
 
-def main():
-    print("CHarm {}".format(__version__))
-    seq = Sequence("ATGTGCTAA")
+#def main():
+#    print("CHarm {}".format(__version__))
+#    seq = Sequence("ATGTGCTAA")
 
 
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+#    main()
