@@ -9,18 +9,6 @@ from libcharm import LibCHarm
 
 
 def main():
-    logger = logging.getLogger('charm-cli')
-    logger.setLevel(logging.INFO)
-
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-
-    fh = logging.FileHandler('charm-cli.log')
-    fh.setLevel(logging.INFO)
-
-    logger.addHandler(ch)
-    logger.addHandler(fh)
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
     parser.add_argument('-o', '--output', type=str, help='path to output file')
@@ -31,6 +19,22 @@ def main():
                                                '\'http://www.kazusa.or.jp/codon\' (e.g. \'83333\' for E. coli K12)')
     parser.add_argument('input', type=str, help='input file in FASTA format')
     args = parser.parse_args()
+
+    logger = logging.getLogger('charm-cli')
+    logger.setLevel(logging.INFO)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    logger.addHandler(ch)
+
+    try:
+        fh = logging.FileHandler('charm-cli.log', 'w')
+        fh.setLevel(logging.INFO)
+        logger.addHandler(fh)
+    except IOError as e:
+        logger.warning(
+            'WARNING: Cannot create log file! Run charm-cli from a directory to which you have write access.')
+        pass
 
     sequence = LibCHarm.Sequence(LibCHarm.open_input_file(args.input), args.origin, args.host, args.frequency)
 
