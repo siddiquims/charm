@@ -34,6 +34,7 @@ def main():
     except IOError as e:
         logger.warning(
             'WARNING: Cannot create log file! Run charm-cli from a directory to which you have write access.')
+        logger.warning(e)
         pass
 
     sequence = LibCHarm.Sequence(LibCHarm.open_input_file(args.input), args.origin, args.host, args.frequency)
