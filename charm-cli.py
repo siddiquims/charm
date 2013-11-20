@@ -3,14 +3,28 @@
 """charm-cli.py: Simple command line interface for CHarm."""
 
 import argparse
+import logging
 
-import libcharm
+from libcharm import LibCHarm
 
 
 def main():
+    logger = logging.getLogger('charm-cli')
+    logger.setLevel(logging.INFO)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+
+    fh = logging.FileHandler('charm-cli.log')
+    fh.setLevel(logging.INFO)
+
+    logger.addHandler(ch)
+    logger.addHandler(fh)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
     parser.add_argument('-o', '--output', type=str, help='path to output file')
+    parser.add_argument('-f', '--frequency', action='store_true', help='use frequency/1000 instead of fraction')
     parser.add_argument('origin', type=int, help='species id of origin organism taken from '
                                                  '\'http://www.kazusa.or.jp/codon\' (e.g. \'83333\' for E. coli K12)')
     parser.add_argument('host', type=int, help='species id of host organism taken from '
@@ -18,18 +32,33 @@ def main():
     parser.add_argument('input', type=str, help='input file in FASTA format')
     args = parser.parse_args()
 
-    sequence = libcharm.Sequence(libcharm.open_input_file(args.input), args.origin, args.host)
+    sequence = LibCHarm.Sequence(LibCHarm.open_input_file(args.input), args.origin, args.host, args.frequency)
 
     harmonized_codons = sequence.get_harmonized_codons()
     verify_sequence = sequence.verify_harmonized_sequence()
 
-    print('SUMMARY:\n')
+    logger.info('SUMMARY:\n')
     if verify_sequence:
-        print('Success! Translation of harmonized and original sequence match!')
+        text = 'Success! Translation of harmonized and original sequence match:\n\n' \
+               '{}\n'.format(sequence.harmonized_translated_sequence)
+        logger.info(text)
     else:
-        print('ERROR: Translations of harmonized and original sequence DO NOT match!')
-    print('Harmonized codons: {}\n'.format(len(harmonized_codons)))
-    print('Codon-harmonized sequence:\n\n{}'.format(sequence.harmonized_sequence))
+        logger.error('ERROR: Translations of harmonized and original sequence DO NOT match!')
+    logger.info('Harmonized codons: {}\n'.format(len(harmonized_codons)))
+
+    table_header = '{:<10} {:^3} {:^4}    {:^4} {:^7} {:>6}'.format('position', 'aa', 'orig', 'new', 'initial', 'final')
+    logger.info(table_header)
+
+    for c in sequence.codons:
+        if str(c['original']) != str(c['new']):
+            line = '{:<10} {:^3} {:<4} -> {:<4} {:<5.2f} -> {:<3.2f}'.format(c['position'], c['aa'], c['original'],
+                                                                             c['new'], c['initial_df'], c['final_df'])
+        else:
+            line = '{:<10} {:^3} {:<12} {:<5.2f}'.format(c['position'], c['aa'], c['original'], c['initial_df'])
+
+        logger.info(line)
+
+    logger.info('\nCodon-harmonized sequence:\n\n{}'.format(sequence.harmonized_sequence))
     exit(0)
 
 
