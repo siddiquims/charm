@@ -18,13 +18,14 @@ from bs4 import BeautifulSoup
 __version__ = "0.1"
 
 
-class LibCHarm:
-    def open_input_file(input):
+class LibCHarm():
+    @staticmethod
+    def open_input_file(input_file):
         try:
-            content = SeqIO.read(input, "fasta", IUPAC.unambiguous_dna)
+            content = SeqIO.read(input_file, "fasta", IUPAC.unambiguous_dna)
         except:
             try:
-                content = SeqIO.read(input, "fasta", IUPAC.unambiguous_rna)
+                content = SeqIO.read(input_file, "fasta", IUPAC.unambiguous_rna)
             except:
                 exit(1)
 
@@ -118,8 +119,7 @@ class LibCHarm:
             self.use_frequency = use_frequency
             self.original_translated_sequence = self.translate_sequence(self.original_sequence, cds=True)
             self.harmonized_sequence = ''
-            self.codons = []
-            self.split_to_codons()
+            self.codons = self.split_to_codons()
 
             self.usage_origin = LibCHarm.CodonUsageTable('http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?'
                                                          'species={}&aa=1&style=N'.format(origin_id),
@@ -127,9 +127,12 @@ class LibCHarm:
             self.usage_host = LibCHarm.CodonUsageTable('http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?'
                                                        'species={}&aa=1&style=N'.format(host_id), self.use_frequency)
             self.harmonize_codons(self.usage_origin, self.usage_host)
-            self.construct_new_sequence()
+            self.harmonized_sequence = self.construct_new_sequence()
+            self.harmonized_translated_sequence = self.translate_sequence(self.harmonized_sequence, cds=True)
 
-        def chunks(self, string, n):
+
+        @staticmethod
+        def chunks(string, n):
             """
             Produce n-character chunks from string.
             string  - string to be sliced
@@ -152,39 +155,44 @@ class LibCHarm:
                 print("Error during translation: ", e)
                 print("This might be just fine if an additional stop codon was found at the end of the sequence.")
                 return self.translate_sequence(sequence, cds=False, to_stop=True)
-                exit(1)
             except KeyError as e:
                 print("Error during translation: ", e)
                 exit(1)
             return translated_sequence
 
         def get_harmonized_codons(self):
+            """
+            Returns a list of all harmonized codons
+            """
             harmonized_codons = []
             for codon in self.codons:
                 if str(codon['original']) != str(codon['new']):
                     harmonized_codons.append(codon)
+
             return harmonized_codons
 
 
         def split_to_codons(self):
-            """Split the sequence into codons."""
+            """Splits the sequence into codons."""
 
+            codons = []
             position = 0
 
             for codon in self.chunks(self.original_sequence, 3):
                 position += 1
-                self.codons.append({'position': int(position),
-                                    'original': str(codon),
-                                    'new': None,
-                                    'origin_f': None,
-                                    'target_f': None,
-                                    'initial_df': None,
-                                    'final_df': None,
-                                    'aa': str(codon.translate(table=self.translation_table))})
+                codons.append({'position': int(position),
+                               'original': str(codon),
+                               'new': None,
+                               'origin_f': None,
+                               'target_f': None,
+                               'initial_df': None,
+                               'final_df': None,
+                               'aa': str(codon.translate(table=self.translation_table))})
+            return codons
 
         def compute_replacement_table(self, usage_origin, usage_target, lower_threshold, strong_stop=True):
             """
-            Generate a list of unique codons and harmonize their codon usage. This list is returned and can be used
+            Generates a list of unique codons and harmonize their codon usage. This list is returned and can be used
             to replace codons in a much longer list without the need to compute the codon substitution for every single
             position.
             """
@@ -219,10 +227,10 @@ class LibCHarm:
                     df_new = abs(origin_f - f_target_new)
 
                     if aa == '*' and strong_stop:
-                        stop_codons.append((item, f_target_new, df_new))
+                        stop_codons.append((item, df_new, f_target_new))
                     elif item != orig_codon:
 
-                        if f_target_new < lower_threshold and origin_f > lower_threshold:
+                        if f_target_new < lower_threshold < origin_f:
                             add = False
                         else:
                             if df_new < df:
@@ -231,18 +239,20 @@ class LibCHarm:
                                 add = True
 
                         if add:
-                            codon_substitutions.append((item, df_new))
+                            codon_substitutions.append((item, df_new, f_target_new))
 
                 if codon_substitutions:
                     sorted_codon_substitutions = sorted(codon_substitutions, key=itemgetter(1))
 
                     codon['final_df'] = sorted_codon_substitutions[0][1]
+                    codon['target_f'] = sorted_codon_substitutions[0][2]
                     codon['new'] = sorted_codon_substitutions[0][0]
                 else:
                     if aa == '*' and strong_stop:
-                        sorted_stop_codons = sorted(stop_codons, key=itemgetter(1))
+                        sorted_stop_codons = sorted(stop_codons, key=itemgetter(2))
 
-                        codon['final_df'] = sorted_stop_codons[-1][2]
+                        codon['final_df'] = sorted_stop_codons[-1][1]
+                        codon['target_f'] = sorted_stop_codons[-1][2]
                         codon['new'] = sorted_stop_codons[-1][0]
                     else:
                         codon['final_df'] = df
@@ -254,7 +264,7 @@ class LibCHarm:
         def harmonize_codons(self, usage_origin, usage_target, lower_threshold_fraction=0.1,
                              lower_threshold_frequency=5, use_replacement_table=True, strong_stop=True):
             """
-            Harmonize the codon usage of self.original_sequence. This can either be done per codon or by
+            Harmonizes the codon usage of self.original_sequence. This can either be done per codon or by
             computing a replacement table first (default). The second approach is much faster for long sequences but
             not as flexible.
             """
@@ -301,7 +311,7 @@ class LibCHarm:
                             f_target_new = usage_target.usage_table[aa][item]['f']
                             df_new = abs(origin_f - f_target_new)
 
-                            if f_target_new < lower_threshold and origin_f > lower_threshold:
+                            if f_target_new < lower_threshold < origin_f:
                                 add = False
                             else:
                                 if df_new < df:
@@ -323,16 +333,28 @@ class LibCHarm:
                         codon['final_df'] = df
                         codon['new'] = orig_codon
 
+            return self.codons
+
 
         def construct_new_sequence(self):
+            """
+            Constructs the harmonized sequence out of the original and substituted codons
+            in self.codons
+            """
             tmp = []
             for codon in self.codons:
                 tmp.append(codon['new'])
 
-            self.harmonized_sequence = Seq(''.join(tmp), IUPAC.unambiguous_dna)
-            self.harmonized_translated_sequence = self.translate_sequence(self.harmonized_sequence, cds=True)
+            harmonized_sequence = Seq(''.join(tmp), IUPAC.unambiguous_dna)
+            #harmonized_translated_sequence = self.translate_sequence(harmonized_sequence, cds=True)
+
+            return harmonized_sequence
 
         def verify_harmonized_sequence(self):
+            """
+            Verifies that the translation of the original and harmonized sequence is identical.
+            This has to be true, but might fail due to potential errors in the algorithm.
+            """
             if str(self.original_translated_sequence) == str(self.harmonized_translated_sequence):
                 return True
             else:
@@ -349,12 +371,3 @@ class LibCHarm:
 #        elif aligner == 'muscle':
 #        else:
 #            raise NameError('Invalid alignment tool specified: {}'.format(aligner))
-
-
-#def main():
-#    print("CHarm {}".format(__version__))
-#    seq = Sequence("ATGTGCTAA")
-
-
-#if __name__ == "__main__":
-#    main()

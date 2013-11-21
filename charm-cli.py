@@ -37,7 +37,9 @@ def main():
         logger.warning(e)
         pass
 
-    sequence = LibCHarm.Sequence(LibCHarm.open_input_file(args.input), args.origin, args.host, args.frequency)
+    charm = LibCHarm()
+
+    sequence = LibCHarm.Sequence(charm.open_input_file(args.input), args.origin, args.host, args.frequency)
 
     harmonized_codons = sequence.get_harmonized_codons()
     verify_sequence = sequence.verify_harmonized_sequence()
@@ -51,15 +53,24 @@ def main():
         logger.error('ERROR: Translations of harmonized and original sequence DO NOT match!')
     logger.info('Harmonized codons: {}\n'.format(len(harmonized_codons)))
 
-    table_header = '{:<10} {:^3} {:^4}    {:^4} {:^7} {:>6}'.format('position', 'aa', 'orig', 'new', 'initial', 'final')
+    table_header = '{:<10} {:^3} {:^4}    {:^4} {:^7} {:>6} {:<7} {:>6}'.format('position', 'aa', 'orig', 'new',
+                                                                                'initial', 'final', 'origin', 'target')
     logger.info(table_header)
 
     for c in sequence.codons:
         if str(c['original']) != str(c['new']):
-            line = '{:<10} {:^3} {:<4} -> {:<4} {:<5.2f} -> {:<3.2f}'.format(c['position'], c['aa'], c['original'],
-                                                                             c['new'], c['initial_df'], c['final_df'])
+            line = '{:<10} {:^3} {:<4} -> {:<4} {:<5.2f} -> {:<3.2f}  {:<5.2f} -> {:<3.2f}'.format(c['position'],
+                                                                                                   c['aa'],
+                                                                                                   c['original'],
+                                                                                                   c['new'],
+                                                                                                   c['initial_df'],
+                                                                                                   c['final_df'],
+                                                                                                   c['origin_f'],
+                                                                                                   c['target_f'])
         else:
-            line = '{:<10} {:^3} {:<12} {:<5.2f}'.format(c['position'], c['aa'], c['original'], c['initial_df'])
+            line = '{:<10} {:^3} {:<12} {:<5.2f}          {:<5.2f} -> {:<3.2f}'.format(c['position'], c['aa'],
+                                                                                       c['original'], c['initial_df'],
+                                                                                       c['origin_f'], c['target_f'])
 
         logger.info(line)
 
