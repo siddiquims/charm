@@ -23,6 +23,13 @@ def autolabel(rects, ax, labels, vertical=True):
         rotation = 'vertical'
 
     if len(labels) == len(rects):
+        heights = []
+        for rect in rects:
+            height = rect.get_height()
+            heights.append(height)
+
+        max_height = max(heights)
+
         for rect in rects:
             i = rects.index(rect)
             label = labels[i]
@@ -30,7 +37,7 @@ def autolabel(rects, ax, labels, vertical=True):
             if height > 0:
                 y = 1.05 * height
             else:
-                y = 0.05
+                y = 0.02 * max_height
             ax.text(rect.get_x() + rect.get_width() / 2., y, str(label),
                     ha='center', va='bottom', rotation=rotation, size='x-small')
 
