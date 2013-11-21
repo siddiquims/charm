@@ -1,17 +1,125 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """charm-cli.py: Simple command line interface for CHarm."""
 
 import argparse
 import logging
 
+import matplotlib
+
 from libcharm import LibCHarm
+
+matplotlib.use('Agg')
+matplotlib.rc('font', **{'sans-serif': 'DejaVu Sans', 'family': 'sans-serif'})
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+def autolabel(rects, ax, labels, vertical=True):
+    # attach some text labels
+
+    if vertical:
+        rotation = 'vertical'
+
+    if len(labels) == len(rects):
+        for rect in rects:
+            i = rects.index(rect)
+            label = labels[i]
+            height = rect.get_height()
+            if height > 0:
+                y = 1.05 * height
+            else:
+                y = 0.05
+            ax.text(rect.get_x() + rect.get_width() / 2., y, str(label),
+                    ha='center', va='bottom', rotation=rotation, size='x-small')
+
+
+def plot_codon_usage(sequence, use_frequencies, prefix=None):
+    x1 = x2 = np.arange(len(sequence.codons))
+
+    fig, ax = plt.subplots(figsize=(50, 5), dpi=300)
+
+    bar_width = 0.8
+    xlabels = []
+
+    origin_f = []
+    target_f = []
+
+    for c in sequence.codons:
+        origin_f.append(c['origin_f'])
+        target_f.append(c['target_f'])
+        xlabels.append(c['aa'])
+
+    origin_f = np.array(origin_f)
+    target_f = np.array(target_f)
+
+    mask1 = np.ma.where(origin_f >= target_f)
+    mask2 = np.ma.where(target_f >= origin_f)
+
+    p1 = ax.bar(x1[mask1], origin_f[mask1], color='b', width=bar_width)
+    p2 = ax.bar(x2, target_f, color='r', width=bar_width)
+    p3 = ax.bar(x1[mask2], origin_f[mask2], color='b', width=bar_width)
+
+    ax.set_xticks(x1 + bar_width / 2)
+    ax.set_xticklabels(xlabels)
+    ax.set_xlabel('amino acid')
+
+    if use_frequencies:
+        ax.set_ylabel('codon usage [frequency/1000]')
+    else:
+        ax.set_ylabel('codon usage [fraction]')
+    ax.legend((p1[0], p2[0]), ('Origin organism', 'Host organism'))
+
+    if prefix:
+        filename = '{}_codon_usage_comparison.svg'.format(prefix)
+    else:
+        filename = 'codon_usage_comparison.svg'
+
+    plt.savefig(filename, format='svg', orientation='landscape', papertype='a4')
+
+
+def plot_codon_usage_differences(sequence, prefix=None):
+    x1 = np.arange(len(sequence.codons))
+
+    fig, ax = plt.subplots(figsize=(50, 5), dpi=300)
+
+    bar_width = 0.8
+    xlabels = []
+
+    df = []
+    bar_labels = []
+
+    for c in sequence.codons:
+        df.append(c['final_df'])
+        xlabels.append(c['aa'])
+        label = u'{} → {}'.format(c['original'], c['new'])
+        bar_labels.append(label)
+
+    df = np.array(df)
+
+    p1 = ax.bar(x1, df, color='b', width=bar_width)
+
+    ax.set_xticks(x1 + bar_width / 2)
+    ax.set_xticklabels(xlabels)
+    ax.set_xlabel('amino acid')
+
+    ax.set_ylabel(r'Differential codon usage $f_{origin} - f_{host}$')
+
+    autolabel(p1, ax, bar_labels, vertical=True)
+
+    if prefix:
+        filename = '{}_codon_usage_differences.svg'.format(prefix)
+    else:
+        filename = 'codon_usage_differences.svg'
+
+    plt.savefig(filename, format='svg', orientation='landscape', papertype='a4')
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
-    parser.add_argument('-o', '--output', type=str, help='path to output file')
+    parser.add_argument('-p', '--prefix', type=str, help='prefix for output files')
     parser.add_argument('-f', '--frequency', action='store_true', help='use frequency/1000 instead of fraction')
     parser.add_argument('origin', type=int, help='species id of origin organism taken from '
                                                  '\'http://www.kazusa.or.jp/codon\' (e.g. \'83333\' for E. coli K12)')
@@ -28,7 +136,11 @@ def main():
     logger.addHandler(ch)
 
     try:
-        fh = logging.FileHandler('charm-cli.log', 'w')
+        if args.prefix:
+            log_filename = '{}_charm-cli.log'.format(args.prefix)
+        else:
+            log_filename = 'charm-cli.log'
+        fh = logging.FileHandler(log_filename, 'w')
         fh.setLevel(logging.INFO)
         logger.addHandler(fh)
     except IOError as e:
@@ -75,6 +187,12 @@ def main():
         logger.info(line)
 
     logger.info('\nCodon-harmonized sequence:\n\n{}'.format(sequence.harmonized_sequence))
+
+    #    logger.info('Plotting data. Resulting files will be prefixed with \'{}\''.format(args.prefix))
+
+    plot_codon_usage(sequence, args.frequency, args.prefix)
+    plot_codon_usage_differences(sequence, args.prefix)
+
     exit(0)
 
 

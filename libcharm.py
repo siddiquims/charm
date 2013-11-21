@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """libcharm.py: Provides codon harmonization functions to front-ends"""
 
