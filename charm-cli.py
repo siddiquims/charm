@@ -6,6 +6,17 @@
 import argparse
 import logging
 
+try:
+    import matplotlib.pyplot as plt
+except ImportError as e:
+    print('ERROR: {}'.format(e.msg))
+    exit(1)
+try:
+    import numpy as np
+except ImportError as e:
+    print('ERROR: {}'.format(e.msg))
+    exit(1)
+
 import matplotlib
 from matplotlib.ticker import MultipleLocator
 
@@ -15,8 +26,6 @@ matplotlib.use('Agg')
 matplotlib.rc('font', **{'sans-serif': 'DejaVu Sans',
                          'serif': 'DejaVu Serif',
                          'family': 'sans-serif'})
-import matplotlib.pyplot as plt
-import numpy as np
 
 
 def autolabel(rects, ax, labels, vertical=True):

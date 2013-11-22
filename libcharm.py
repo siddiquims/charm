@@ -9,12 +9,17 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError
 from operator import itemgetter
 
-from Bio.Seq import Seq
-from Bio import SeqIO
-from Bio.Alphabet import IUPAC
-from Bio.Data import CodonTable
-from bs4 import BeautifulSoup
-
+try:
+    from Bio.Seq import Seq
+    from Bio import SeqIO
+    from Bio.Alphabet import IUPAC
+    from Bio.Data import CodonTable
+except ImportError as e:
+    print('ERROR: {}'.format(e.msg))
+try:
+    from bs4 import BeautifulSoup
+except ImportError as e:
+    print('ERROR: {}'.format(e.msg))
 
 __version__ = "0.1"
 
