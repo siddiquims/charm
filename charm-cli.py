@@ -174,22 +174,22 @@ def main():
 
     if args.translation_table_origin:
         if args.translation_table_host:
-            sequence = LibCHarm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
-                                         translation_table_origin=args.translation_table_origin,
+            sequence = charm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
+                                      translation_table_origin=args.translation_table_origin,
                                          translation_table_host=args.translation_table_host,
                                          use_frequency=args.frequency)
         else:
-            sequence = LibCHarm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
-                                         translation_table_origin=args.translation_table_origin,
+            sequence = charm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
+                                      translation_table_origin=args.translation_table_origin,
                                          use_frequency=args.frequency)
     else:
         if args.translation_table_origin:
-            sequence = LibCHarm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
-                                         translation_table_origin=args.translation_table_origin,
+            sequence = charm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
+                                      translation_table_origin=args.translation_table_origin,
                                          use_frequency=args.frequency)
         else:
-            sequence = LibCHarm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
-                                         use_frequency=args.frequency)
+            sequence = charm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
+                                      use_frequency=args.frequency)
 
     harmonized_codons = sequence.get_harmonized_codons()
     verify_sequence = sequence.verify_harmonized_sequence()
