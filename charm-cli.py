@@ -7,6 +7,8 @@ import argparse
 import logging
 
 try:
+    import matplotlib
+    from matplotlib.ticker import MultipleLocator
     import matplotlib.pyplot as plt
 except ImportError as e:
     print('ERROR: {}'.format(e.msg))
@@ -17,8 +19,6 @@ except ImportError as e:
     print('ERROR: {}'.format(e.msg))
     exit(1)
 
-import matplotlib
-from matplotlib.ticker import MultipleLocator
 
 from libcharm import LibCHarm
 
