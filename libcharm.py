@@ -107,7 +107,18 @@ class LibCHarm():
         """
 
         def __init__(self, sequence, origin_id, host_id, translation_table_origin=1, translation_table_host=1,
-                     use_frequency=False):
+                     use_frequency=False, lower_threshold=None):
+
+            if not lower_threshold:
+                if use_frequency:
+                    if not lower_threshold:
+                        self.lower_threshold = 5
+                else:
+                    if not lower_threshold:
+                        self.lower_threshold = 0.1
+            else:
+                self.lower_threshold = lower_threshold
+
             if translation_table_origin > 15 or translation_table_host > 15:
                 raise ValueError('Though the NCBI lists more than 15 translation tables, CHarm is limited to the '
                                  'first 15 as listed on \'http://www.kazusa.or.jp/codon/\'.')
@@ -135,7 +146,7 @@ class LibCHarm():
                                                        'species={}&aa={}&style=N'.format(host_id,
                                                                                          translation_table_host),
                                                        self.use_frequency)
-            self.harmonize_codons(self.usage_origin, self.usage_host)
+            self.harmonize_codons()
             self.harmonized_sequence = self.construct_new_sequence()
             self.harmonized_translated_sequence = self.translate_sequence(self.harmonized_sequence,
                                                                           self.translation_table_host, cds=True)
@@ -214,7 +225,7 @@ class LibCHarm():
                                'aa': str(codon.translate(table=self.translation_table_origin))})
             return codons
 
-        def compute_replacement_table(self, usage_origin, usage_target, lower_threshold, strong_stop=True):
+        def compute_replacement_table(self, strong_stop=True):
             """
             Generates a list of unique codons and harmonize their codon usage. This list is returned and can be used
             to replace codons in a much longer list without the need to compute the codon substitution for every single
@@ -231,8 +242,8 @@ class LibCHarm():
                 aa = codon['aa']
                 orig_codon = str(codon['original'])
 
-                origin_f = usage_origin.usage_table[aa][orig_codon]['f']
-                target_f = usage_target.usage_table[aa][orig_codon]['f']
+                origin_f = self.usage_origin.usage_table[aa][orig_codon]['f']
+                target_f = self.usage_host.usage_table[aa][orig_codon]['f']
 
                 df = abs(origin_f - target_f)
                 new_codon = orig_codon
@@ -244,22 +255,21 @@ class LibCHarm():
                 codon_substitutions = []
                 stop_codons = []
 
-                for item in usage_target.usage_table[aa]:
+                for item in self.usage_host.usage_table[aa]:
 
                     add = False
-                    f_target_new = usage_target.usage_table[aa][item]['f']
+                    f_target_new = self.usage_host.usage_table[aa][item]['f']
                     df_new = abs(origin_f - f_target_new)
 
                     if aa == '*' and strong_stop:
                         stop_codons.append((item, df_new, f_target_new))
                     elif item != orig_codon:
-
-                        if f_target_new < lower_threshold < origin_f:
+                        if f_target_new < self.lower_threshold < origin_f:
                             add = False
                         else:
                             if df_new < df:
                                 add = True
-                            elif target_f == 0:
+                            else:# target_f == 0:
                                 add = True
 
                         if add:
@@ -271,6 +281,7 @@ class LibCHarm():
                     codon['final_df'] = sorted_codon_substitutions[0][1]
                     codon['target_f'] = sorted_codon_substitutions[0][2]
                     codon['new'] = sorted_codon_substitutions[0][0]
+
                 else:
                     if aa == '*' and strong_stop:
                         sorted_stop_codons = sorted(stop_codons, key=itemgetter(2))
@@ -285,26 +296,17 @@ class LibCHarm():
             return unique_codons
 
 
-        def harmonize_codons(self, usage_origin, usage_target, lower_threshold_fraction=0.1,
-                             lower_threshold_frequency=5, use_replacement_table=True, strong_stop=True):
+        def harmonize_codons(self, use_replacement_table=True, strong_stop=True):
             """
             Harmonizes the codon usage of self.original_sequence. This can either be done per codon or by
             computing a replacement table first (default). The second approach is much faster for long sequences but
             not as flexible.
             """
 
-            if usage_origin.use_frequency and usage_target.use_frequency:
-                lower_threshold = lower_threshold_frequency
-            elif not usage_origin.use_frequency and not usage_target.use_frequency:
-                lower_threshold = lower_threshold_fraction
-            else:
-                print('ERROR: Origin and target use different types of usage frequencies!')
-                exit(1)
-
             if use_replacement_table:
             # This is a much faster approach, but not as flexible as the substitution is only done per codon and cannot
             # be expanded to its surroundings.
-                unique_codons = self.compute_replacement_table(usage_origin, usage_target, lower_threshold, strong_stop)
+                unique_codons = self.compute_replacement_table(strong_stop)
                 for codon in self.codons:
                     for new_codon in unique_codons:
                         if codon['original'] == new_codon['original']:
@@ -317,8 +319,8 @@ class LibCHarm():
                     aa = codon['aa']
                     orig_codon = str(codon['original'])
 
-                    origin_f = usage_origin.usage_table[aa][orig_codon]['f']
-                    target_f = usage_target.usage_table[aa][orig_codon]['f']
+                    origin_f = self.usage_origin.usage_table[aa][orig_codon]['f']
+                    target_f = self.usage_host.usage_table[aa][orig_codon]['f']
 
                     df = abs(origin_f - target_f)
                     new_codon = orig_codon
@@ -329,13 +331,13 @@ class LibCHarm():
 
                     codon_substitutions = []
 
-                    for item in usage_target.usage_table[aa]:
+                    for item in self.usage_host.usage_table[aa]:
                         add = False
                         if item != orig_codon:
-                            f_target_new = usage_target.usage_table[aa][item]['f']
+                            f_target_new = self.usage_host.usage_table[aa][item]['f']
                             df_new = abs(origin_f - f_target_new)
 
-                            if f_target_new < lower_threshold < origin_f:
+                            if f_target_new < self.lower_threshold < origin_f:
                                 add = False
                             else:
                                 if df_new < df:

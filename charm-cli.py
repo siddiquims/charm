@@ -77,6 +77,7 @@ def plot_codon_usage(sequence, use_frequencies, fig, ax):#, prefix=None):
     else:
         ax.set_ylabel('codon usage [fraction]')
     ax.legend((p1, p2), ('Origin organism', 'Host organism'), loc=2, bbox_to_anchor=(1, 1))
+    ax.hlines(sequence.lower_threshold, 0, len(x1), colors='k', linestyles='dotted', **{'linewidth': 2})
 
 
 def plot_codon_usage_differences(sequence, fig, ax):#, prefix=None):
@@ -105,7 +106,7 @@ def plot_codon_usage_differences(sequence, fig, ax):#, prefix=None):
     ax.get_yaxis().tick_left()
 
     ax.set_xticks(x1 + bar_width / 2)
-    ax.set_xticklabels(xlabels)
+    ax.set_xticklabels(xlabels, **{'family': 'monospace'})
     ax.set_xlabel('amino acid')
 
     ax.set_ylabel(r'Differential codon usage $f_{origin} - f_{host}$')
