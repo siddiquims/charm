@@ -134,6 +134,14 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
     parser.add_argument('-p', '--prefix', type=str, help='prefix for output files')
     parser.add_argument('-f', '--frequency', action='store_true', help='use frequency/1000 instead of fraction')
+    parser.add_argument('-to', '--translation_table_origin', type=int,
+                        help='id of translation table; Default is: standard genetic code = 1; '
+                             'id corresponds to \'trans_table\' '
+                             'on http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi')
+    parser.add_argument('-th', '--translation_table_host', type=int,
+                        help='id of translation table; Default is: standard genetic code = 1; '
+                             'id corresponds to \'trans_table\' '
+                             'on http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi')
     parser.add_argument('origin', type=int, help='species id of origin organism taken from '
                                                  '\'http://www.kazusa.or.jp/codon\' (e.g. \'83333\' for E. coli K12)')
     parser.add_argument('host', type=int, help='species id of host organism taken from '
@@ -164,7 +172,24 @@ def main():
 
     charm = LibCHarm()
 
-    sequence = LibCHarm.Sequence(charm.open_input_file(args.input), args.origin, args.host, args.frequency)
+    if args.translation_table_origin:
+        if args.translation_table_host:
+            sequence = LibCHarm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
+                                         translation_table_origin=args.translation_table_origin,
+                                         translation_table_host=args.translation_table_host,
+                                         use_frequency=args.frequency)
+        else:
+            sequence = LibCHarm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
+                                         translation_table_origin=args.translation_table_origin,
+                                         use_frequency=args.frequency)
+    else:
+        if args.translation_table_origin:
+            sequence = LibCHarm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
+                                         translation_table_origin=args.translation_table_origin,
+                                         use_frequency=args.frequency)
+        else:
+            sequence = LibCHarm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
+                                         use_frequency=args.frequency)
 
     harmonized_codons = sequence.get_harmonized_codons()
     verify_sequence = sequence.verify_harmonized_sequence()

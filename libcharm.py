@@ -106,10 +106,11 @@ class LibCHarm():
         use_frequency   - Use frequency per thousand instead of fraction during the assessment of the codon usage
         """
 
-        def __init__(self, sequence, origin_id, host_id, use_frequency=False):
-
+        def __init__(self, sequence, origin_id, host_id, translation_table_origin=1, translation_table_host=1,
+                     use_frequency=False):
             # Set translation table for original sequence
-            self.translation_table = CodonTable.unambiguous_dna_by_name["Standard"]
+            self.translation_table_origin = CodonTable.unambiguous_dna_by_id[int(translation_table_origin)]
+            self.translation_table_host = CodonTable.unambiguous_dna_by_id[int(translation_table_host)]
             # Reformat and sanitize sequence string (remove whitespaces, change to uppercase)
             if type(sequence) is 'str':
                 if 'U' in sequence:
@@ -118,18 +119,23 @@ class LibCHarm():
             else:
                 self.original_sequence = sequence
             self.use_frequency = use_frequency
-            self.original_translated_sequence = self.translate_sequence(self.original_sequence, cds=True)
+            self.original_translated_sequence = self.translate_sequence(self.original_sequence,
+                                                                        self.translation_table_origin, cds=True)
             self.harmonized_sequence = ''
-            self.codons = self.split_to_codons()
+            self.codons = self.split_original_sequence_to_codons()
 
             self.usage_origin = LibCHarm.CodonUsageTable('http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?'
-                                                         'species={}&aa=1&style=N'.format(origin_id),
+                                                         'species={}&aa={}&style=N'.format(origin_id,
+                                                                                           translation_table_origin),
                                                          self.use_frequency)
             self.usage_host = LibCHarm.CodonUsageTable('http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?'
-                                                       'species={}&aa=1&style=N'.format(host_id), self.use_frequency)
+                                                       'species={}&aa={}&style=N'.format(host_id,
+                                                                                         translation_table_host),
+                                                       self.use_frequency)
             self.harmonize_codons(self.usage_origin, self.usage_host)
             self.harmonized_sequence = self.construct_new_sequence()
-            self.harmonized_translated_sequence = self.translate_sequence(self.harmonized_sequence, cds=True)
+            self.harmonized_translated_sequence = self.translate_sequence(self.harmonized_sequence,
+                                                                          self.translation_table_host, cds=True)
 
 
         @staticmethod
@@ -142,7 +148,7 @@ class LibCHarm():
             for start in range(0, len(string), n):
                 yield string[start:start + n]
 
-        def translate_sequence(self, sequence, cds=True, to_stop=False):
+        def translate_sequence(self, sequence, translation_table, cds=True, to_stop=False):
             """
             Translate a given DNA or RNA sequence into an amino acid sequence.
 
@@ -151,11 +157,11 @@ class LibCHarm():
             to_stop  - Only translate up to the first stop codon
             """
             try:
-                translated_sequence = sequence.translate(table=self.translation_table, cds=cds, to_stop=to_stop)
+                translated_sequence = sequence.translate(table=translation_table, cds=cds, to_stop=to_stop)
             except CodonTable.TranslationError as e:
                 print("Error during translation: ", e)
                 print("This might be just fine if an additional stop codon was found at the end of the sequence.")
-                return self.translate_sequence(sequence, cds=False, to_stop=True)
+                return self.translate_sequence(sequence, translation_table, cds=False, to_stop=True)
             except KeyError as e:
                 print("Error during translation: ", e)
                 exit(1)
@@ -173,7 +179,7 @@ class LibCHarm():
             return harmonized_codons
 
 
-        def split_to_codons(self):
+        def split_original_sequence_to_codons(self):
             """Splits the sequence into codons."""
 
             codons = []
@@ -188,7 +194,7 @@ class LibCHarm():
                                'target_f': None,
                                'initial_df': None,
                                'final_df': None,
-                               'aa': str(codon.translate(table=self.translation_table))})
+                               'aa': str(codon.translate(table=self.translation_table_origin))})
             return codons
 
         def compute_replacement_table(self, usage_origin, usage_target, lower_threshold, strong_stop=True):
