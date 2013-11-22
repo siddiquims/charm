@@ -108,7 +108,10 @@ class LibCHarm():
 
         def __init__(self, sequence, origin_id, host_id, translation_table_origin=1, translation_table_host=1,
                      use_frequency=False):
-            # Set translation table for original sequence
+            if translation_table_origin > 15 or translation_table_host > 15:
+                raise ValueError('Though the NCBI lists more than 15 translation tables, CHarm is limited to the '
+                                 'first 15 as listed on \'http://www.kazusa.or.jp/codon/\'.')
+                # Set translation table for original sequence
             self.translation_table_origin = CodonTable.unambiguous_dna_by_id[int(translation_table_origin)]
             self.translation_table_host = CodonTable.unambiguous_dna_by_id[int(translation_table_host)]
             # Reformat and sanitize sequence string (remove whitespaces, change to uppercase)

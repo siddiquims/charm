@@ -183,10 +183,10 @@ def main():
                                       translation_table_origin=args.translation_table_origin,
                                          use_frequency=args.frequency)
     else:
-        if args.translation_table_origin:
+        if args.translation_table_host:
             sequence = charm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
-                                      translation_table_origin=args.translation_table_origin,
-                                         use_frequency=args.frequency)
+                                      translation_table_host=args.translation_table_host,
+                                      use_frequency=args.frequency)
         else:
             sequence = charm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
                                       use_frequency=args.frequency)
