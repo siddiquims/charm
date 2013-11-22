@@ -263,7 +263,7 @@ class LibCHarm():
 
                     if aa == '*' and strong_stop:
                         stop_codons.append((item, df_new, f_target_new))
-                    elif item != orig_codon:
+                    else:
                         if f_target_new < self.lower_threshold < origin_f:
                             add = False
                         else:
