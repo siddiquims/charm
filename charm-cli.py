@@ -11,14 +11,14 @@ import matplotlib
 from libcharm import LibCHarm
 
 matplotlib.use('Agg')
-matplotlib.rc('font', **{'sans-serif': 'DejaVu Sans', 'family': 'sans-serif'})
+matplotlib.rc('font', **{'sans-serif': 'DejaVu Sans',
+                         'serif': 'DejaVu Serif',
+                         'family': 'sans-serif'})
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 def autolabel(rects, ax, labels, vertical=True):
-    # attach some text labels
-
     if vertical:
         rotation = 'vertical'
 
@@ -42,12 +42,10 @@ def autolabel(rects, ax, labels, vertical=True):
                     ha='center', va='bottom', rotation=rotation, size='x-small')
 
 
-def plot_codon_usage(sequence, use_frequencies, prefix=None):
+def plot_codon_usage(sequence, use_frequencies, fig, ax):#, prefix=None):
+
     x1 = x2 = np.arange(len(sequence.codons))
-
-    fig, ax = plt.subplots(figsize=(50, 5), dpi=300)
-
-    bar_width = 0.8
+    bar_width = 0.5
     xlabels = []
 
     origin_f = []
@@ -61,12 +59,14 @@ def plot_codon_usage(sequence, use_frequencies, prefix=None):
     origin_f = np.array(origin_f)
     target_f = np.array(target_f)
 
-    mask1 = np.ma.where(origin_f >= target_f)
-    mask2 = np.ma.where(target_f >= origin_f)
+    p1 = ax.bar(x1, origin_f, color='b', width=bar_width)
+    p2 = ax.bar(x2 + (0.5 * bar_width), target_f, color='r', width=bar_width)
 
-    p1 = ax.bar(x1[mask1], origin_f[mask1], color='b', width=bar_width)
-    p2 = ax.bar(x2, target_f, color='r', width=bar_width)
-    p3 = ax.bar(x1[mask2], origin_f[mask2], color='b', width=bar_width)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.tick_params(axis='both', direction='out')
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
 
     ax.set_xticks(x1 + bar_width / 2)
     ax.set_xticklabels(xlabels)
@@ -76,20 +76,11 @@ def plot_codon_usage(sequence, use_frequencies, prefix=None):
         ax.set_ylabel('codon usage [frequency/1000]')
     else:
         ax.set_ylabel('codon usage [fraction]')
-    ax.legend((p1[0], p2[0]), ('Origin organism', 'Host organism'))
-
-    if prefix:
-        filename = '{}_codon_usage_comparison.svg'.format(prefix)
-    else:
-        filename = 'codon_usage_comparison.svg'
-
-    plt.savefig(filename, format='svg', orientation='landscape', papertype='a4')
+    ax.legend((p1, p2), ('Origin organism', 'Host organism'), loc=2, bbox_to_anchor=(1, 1))
 
 
-def plot_codon_usage_differences(sequence, prefix=None):
+def plot_codon_usage_differences(sequence, fig, ax):#, prefix=None):
     x1 = np.arange(len(sequence.codons))
-
-    fig, ax = plt.subplots(figsize=(50, 5), dpi=300)
 
     bar_width = 0.8
     xlabels = []
@@ -107,6 +98,12 @@ def plot_codon_usage_differences(sequence, prefix=None):
 
     p1 = ax.bar(x1, df, color='b', width=bar_width)
 
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.tick_params(axis='both', direction='out')
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+
     ax.set_xticks(x1 + bar_width / 2)
     ax.set_xticklabels(xlabels)
     ax.set_xlabel('amino acid')
@@ -115,10 +112,19 @@ def plot_codon_usage_differences(sequence, prefix=None):
 
     autolabel(p1, ax, bar_labels, vertical=True)
 
+
+def plot(sequence, use_frequencies, prefix=None):
     if prefix:
-        filename = '{}_codon_usage_differences.svg'.format(prefix)
+        filename = '{}_charm_results.svg'.format(prefix)
     else:
-        filename = 'codon_usage_differences.svg'
+        filename = 'charm_results.svg'
+
+    fig, axarr = plt.subplots(2, figsize=(50, 20), dpi=300)
+
+    #fig.suptitle('CHarm codon usage harmonization')
+
+    plot_codon_usage(sequence, use_frequencies, fig, axarr[0])
+    plot_codon_usage_differences(sequence, fig, axarr[1])
 
     plt.savefig(filename, format='svg', orientation='landscape', papertype='a4')
 
@@ -197,8 +203,7 @@ def main():
 
     #    logger.info('Plotting data. Resulting files will be prefixed with \'{}\''.format(args.prefix))
 
-    plot_codon_usage(sequence, args.frequency, args.prefix)
-    plot_codon_usage_differences(sequence, args.prefix)
+    plot(sequence, args.frequency, args.prefix)
 
     exit(0)
 
