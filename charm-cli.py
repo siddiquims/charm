@@ -7,6 +7,7 @@ import argparse
 import logging
 
 import matplotlib
+from matplotlib.ticker import MultipleLocator
 
 from libcharm import LibCHarm
 
@@ -42,7 +43,7 @@ def autolabel(rects, ax, labels, vertical=True):
                     ha='center', va='bottom', rotation=rotation, size='x-small')
 
 
-def plot_codon_usage(sequence, use_frequencies, fig, ax):#, prefix=None):
+def plot_codon_usage(sequence, fig, ax):#, prefix=None):
 
     x1 = x2 = np.arange(len(sequence.codons))
     bar_width = 0.5
@@ -64,7 +65,7 @@ def plot_codon_usage(sequence, use_frequencies, fig, ax):#, prefix=None):
 
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    ax.tick_params(axis='both', direction='out')
+    ax.tick_params(axis='both', which='both', direction='out')
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
@@ -72,12 +73,22 @@ def plot_codon_usage(sequence, use_frequencies, fig, ax):#, prefix=None):
     ax.set_xticklabels(xlabels)
     ax.set_xlabel('amino acid')
 
-    if use_frequencies:
+    if sequence.use_frequency:
         ax.set_ylabel('codon usage [frequency/1000]')
     else:
         ax.set_ylabel('codon usage [fraction]')
     ax.legend((p1, p2), ('Origin organism', 'Host organism'), loc=2, bbox_to_anchor=(1, 1))
     ax.hlines(sequence.lower_threshold, 0, len(x1), colors='k', linestyles='dotted', **{'linewidth': 2})
+
+    if not sequence.use_frequency:
+        majorLocator = MultipleLocator(0.1)
+        minorLocator = MultipleLocator(0.01)
+    else:
+        majorLocator = MultipleLocator(10)
+        minorLocator = MultipleLocator(1)
+
+    ax.yaxis.set_major_locator(majorLocator)
+    ax.yaxis.set_minor_locator(minorLocator)
 
 
 def plot_codon_usage_differences(sequence, fig, ax):#, prefix=None):
@@ -101,7 +112,7 @@ def plot_codon_usage_differences(sequence, fig, ax):#, prefix=None):
 
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    ax.tick_params(axis='both', direction='out')
+    ax.tick_params(axis='both', which='both', direction='out')
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
@@ -110,6 +121,16 @@ def plot_codon_usage_differences(sequence, fig, ax):#, prefix=None):
     ax.set_xlabel('amino acid')
 
     ax.set_ylabel(r'Differential codon usage $f_{origin} - f_{host}$')
+
+    if not sequence.use_frequency:
+        majorLocator = MultipleLocator(0.05)
+        minorLocator = MultipleLocator(0.01)
+    else:
+        majorLocator = MultipleLocator(10)
+        minorLocator = MultipleLocator(1)
+
+    ax.yaxis.set_major_locator(majorLocator)
+    ax.yaxis.set_minor_locator(minorLocator)
 
     autolabel(p1, ax, bar_labels, vertical=True)
 
@@ -124,7 +145,7 @@ def plot(sequence, use_frequencies, prefix=None):
 
     #fig.suptitle('CHarm codon usage harmonization')
 
-    plot_codon_usage(sequence, use_frequencies, fig, axarr[0])
+    plot_codon_usage(sequence, fig, axarr[0])
     plot_codon_usage_differences(sequence, fig, axarr[1])
 
     plt.savefig(filename, format='svg', orientation='landscape', papertype='a4')
