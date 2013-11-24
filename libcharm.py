@@ -27,6 +27,10 @@ __version__ = "0.1"
 class LibCHarm():
     @staticmethod
     def open_input_file(input_file):
+        """
+        Load sequence from file in FASTA format
+        input_file - Path and filename of input sequence file
+        """
         try:
             content = SeqIO.read(input_file, "fasta", IUPAC.unambiguous_dna)
         except:
@@ -48,7 +52,9 @@ class LibCHarm():
 
 
         def add_to_table(self, codon, aa, frequency):
-            """Add codon and usage frequency to table"""
+            """
+            Add codon and usage frequency to table
+            """
 
             if aa in self.usage_table:
             # If the aa is already present in the table, just add the new codon
@@ -59,7 +65,9 @@ class LibCHarm():
                 self.usage_table[aa][codon] = {'f': frequency}
 
         def fetch_codon_usage_table(self):
-            """Fetch the codon table from http://www.kazusa.or.jp/codon"""
+            """
+            Fetch the codon table from http://www.kazusa.or.jp/codon
+            """
 
             request = Request(self.url)
             try:
