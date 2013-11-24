@@ -8,24 +8,22 @@ import logging
 
 try:
     import matplotlib
-    from matplotlib.ticker import MultipleLocator
-    import matplotlib.pyplot as plt
+
+    matplotlib.use('Agg')
+    matplotlib.rc('font', **{'sans-serif': 'DejaVu Sans',
+                             'serif': 'DejaVu Serif',
+                             'family': 'sans-serif'})
+    import matplotlib.pyplot
 except ImportError as e:
     print('ERROR: {}'.format(e.msg))
     exit(1)
 try:
-    import numpy as np
+    import numpy
 except ImportError as e:
     print('ERROR: {}'.format(e.msg))
     exit(1)
 
-
 from libcharm import LibCHarm
-
-matplotlib.use('Agg')
-matplotlib.rc('font', **{'sans-serif': 'DejaVu Sans',
-                         'serif': 'DejaVu Serif',
-                         'family': 'sans-serif'})
 
 
 def autolabel(rects, ax, labels, vertical=True):
@@ -52,9 +50,9 @@ def autolabel(rects, ax, labels, vertical=True):
                     ha='center', va='bottom', rotation=rotation, size='x-small')
 
 
-def plot_codon_usage(sequence, fig, ax):#, prefix=None):
+def plot_codon_usage(sequence, ax):#, prefix=None):
 
-    x1 = x2 = np.arange(len(sequence.codons))
+    x1 = x2 = numpy.arange(len(sequence.codons))
     bar_width = 0.5
     xlabels = []
 
@@ -66,8 +64,8 @@ def plot_codon_usage(sequence, fig, ax):#, prefix=None):
         target_f.append(c['target_f'])
         xlabels.append(c['aa'])
 
-    origin_f = np.array(origin_f)
-    target_f = np.array(target_f)
+    origin_f = numpy.array(origin_f)
+    target_f = numpy.array(target_f)
 
     p1 = ax.bar(x1, origin_f, color='b', width=bar_width)
     p2 = ax.bar(x2 + (0.5 * bar_width), target_f, color='r', width=bar_width)
@@ -90,18 +88,18 @@ def plot_codon_usage(sequence, fig, ax):#, prefix=None):
     ax.hlines(sequence.lower_threshold, 0, len(x1), colors='k', linestyles='dotted', **{'linewidth': 2})
 
     if not sequence.use_frequency:
-        majorLocator = MultipleLocator(0.1)
-        minorLocator = MultipleLocator(0.01)
+        major_locator = matplotlib.ticker.MultipleLocator(0.1)
+        minor_locator = matplotlib.ticker.MultipleLocator(0.01)
     else:
-        majorLocator = MultipleLocator(10)
-        minorLocator = MultipleLocator(1)
+        major_locator = matplotlib.ticker.MultipleLocator(10)
+        minor_locator = matplotlib.ticker.MultipleLocator(1)
 
-    ax.yaxis.set_major_locator(majorLocator)
-    ax.yaxis.set_minor_locator(minorLocator)
+    ax.yaxis.set_major_locator(major_locator)
+    ax.yaxis.set_minor_locator(minor_locator)
 
 
-def plot_codon_usage_differences(sequence, fig, ax):#, prefix=None):
-    x1 = np.arange(len(sequence.codons))
+def plot_codon_usage_differences(sequence, ax):#, prefix=None):
+    x1 = numpy.arange(len(sequence.codons))
 
     bar_width = 0.8
     xlabels = []
@@ -115,7 +113,7 @@ def plot_codon_usage_differences(sequence, fig, ax):#, prefix=None):
         label = u'{} → {}'.format(c['original'], c['new'])
         bar_labels.append(label)
 
-    df = np.array(df)
+    df = numpy.array(df)
 
     p1 = ax.bar(x1, df, color='b', width=bar_width)
 
@@ -132,32 +130,30 @@ def plot_codon_usage_differences(sequence, fig, ax):#, prefix=None):
     ax.set_ylabel(r'Differential codon usage $f_{origin} - f_{host}$')
 
     if not sequence.use_frequency:
-        majorLocator = MultipleLocator(0.05)
-        minorLocator = MultipleLocator(0.01)
+        major_locator = matplotlib.ticker.MultipleLocator(0.05)
+        minor_locator = matplotlib.ticker.MultipleLocator(0.01)
     else:
-        majorLocator = MultipleLocator(10)
-        minorLocator = MultipleLocator(1)
+        major_locator = matplotlib.ticker.MultipleLocator(10)
+        minor_locator = matplotlib.ticker.MultipleLocator(1)
 
-    ax.yaxis.set_major_locator(majorLocator)
-    ax.yaxis.set_minor_locator(minorLocator)
+    ax.yaxis.set_major_locator(major_locator)
+    ax.yaxis.set_minor_locator(minor_locator)
 
     autolabel(p1, ax, bar_labels, vertical=True)
 
 
-def plot(sequence, use_frequencies, prefix=None):
+def plot(sequence, prefix=None):
     if prefix:
         filename = '{}_charm_results.svg'.format(prefix)
     else:
         filename = 'charm_results.svg'
 
-    fig, axarr = plt.subplots(2, figsize=(50, 20), dpi=300)
+    fig, axarr = matplotlib.pyplot.subplots(2, figsize=(50, 20), dpi=300)
 
-    #fig.suptitle('CHarm codon usage harmonization')
+    plot_codon_usage(sequence, axarr[0])
+    plot_codon_usage_differences(sequence, axarr[1])
 
-    plot_codon_usage(sequence, fig, axarr[0])
-    plot_codon_usage_differences(sequence, fig, axarr[1])
-
-    plt.savefig(filename, format='svg', orientation='landscape', papertype='a4')
+    matplotlib.pyplot.savefig(filename, format='svg', orientation='landscape', papertype='a4')
 
 
 def main():
@@ -198,9 +194,9 @@ def main():
         fh.setLevel(logging.INFO)
         logger.addHandler(fh)
     except IOError as e:
-        logger.warning(
-            'WARNING: Cannot create log file! Run charm-cli from a directory to which you have write access.')
-        logger.warning(e)
+        logger.warning('WARNING: Cannot create log file! Run charm-cli from a directory to '
+                       'which you have write access.')
+        logger.warning(e.msg)
         pass
 
     charm = LibCHarm()
@@ -265,7 +261,7 @@ def main():
 
     #    logger.info('Plotting data. Resulting files will be prefixed with \'{}\''.format(args.prefix))
 
-    plot(sequence, args.frequency, args.prefix)
+    plot(sequence, args.prefix)
 
     exit(0)
 
