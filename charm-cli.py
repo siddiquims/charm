@@ -101,6 +101,11 @@ def plot_codon_usage(sequence, ax):#, prefix=None):
 def plot_codon_usage_differences(sequence, ax):#, prefix=None):
     x1 = numpy.arange(len(sequence.codons))
 
+    if sequence.use_frequency:
+        threshold = 5
+    else:
+        threshold = 0.2
+
     bar_width = 0.8
     xlabels = []
 
@@ -113,9 +118,18 @@ def plot_codon_usage_differences(sequence, ax):#, prefix=None):
         label = u'{} → {}'.format(c['original'], c['new'])
         bar_labels.append(label)
 
+    bar_labels = numpy.array(bar_labels)
+
     df = numpy.array(df)
 
-    p1 = ax.bar(x1, df, color='b', width=bar_width)
+    mask1 = numpy.ma.where(df > threshold)
+    mask2 = numpy.ma.where(df <= threshold)
+
+    p1 = ax.bar(x1[mask1], df[mask1], color='r', width=bar_width)
+    autolabel(p1, ax, bar_labels[mask1], vertical=True)
+
+    p2 = ax.bar(x1[mask2], df[mask2], color='b', width=bar_width)
+    autolabel(p2, ax, bar_labels[mask2], vertical=True)
 
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -136,10 +150,12 @@ def plot_codon_usage_differences(sequence, ax):#, prefix=None):
         major_locator = matplotlib.ticker.MultipleLocator(10)
         minor_locator = matplotlib.ticker.MultipleLocator(1)
 
+    ax.legend((p1, p2), (u'df > {}'.format(threshold), u'df ≤ {}'.format(threshold)), loc=2, bbox_to_anchor=(1, 1))
+
     ax.yaxis.set_major_locator(major_locator)
     ax.yaxis.set_minor_locator(minor_locator)
 
-    autolabel(p1, ax, bar_labels, vertical=True)
+    ax.hlines(threshold, 0, len(x1), colors='k', linestyles='dotted', **{'linewidth': 1})
 
 
 def plot(sequence, prefix=None):
