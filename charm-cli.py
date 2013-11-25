@@ -161,8 +161,12 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
     parser.add_argument('-p', '--prefix', type=str, help='prefix for output files')
     parser.add_argument('-f', '--frequency', action='store_true', help='use frequency/1000 instead of fraction')
+    parser.add_argument('-l', '--lower_frequency_alternative', action='store_true',
+                        help='if two codons result in the same difference in codon usage '
+                             'between origin and target host, use the lower frequency alternative')
     parser.add_argument('-t', '--threshold', type=float,
-                        help='Lower threshold of codon usage. Defaults to 0.1 and 5 for fraction and frequency respectively')
+                        help='Lower threshold of codon usage. Defaults to 0.1 and 5 for fraction and '
+                             'frequency respectively')
     parser.add_argument('-to', '--translation_table_origin', type=int,
                         help='id of translation table; Default is: standard genetic code = 1; '
                              'id corresponds to \'trans_table\' '
@@ -222,7 +226,8 @@ def main():
                               translation_table_origin=translation_table_origin,
                               translation_table_host=translation_table_host,
                               use_frequency=args.frequency,
-                              lower_threshold=lower_threshold)
+                              lower_threshold=lower_threshold,
+                              lower_alternative=args.lower_frequency_alternative)
 
     harmonized_codons = sequence.get_harmonized_codons()
     verify_sequence = sequence.verify_harmonized_sequence()

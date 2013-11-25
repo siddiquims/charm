@@ -289,7 +289,8 @@ class LibCHarm():
 
                     if len(codon_substitutions) >= 2:
 
-                        if sorted_codon_substitutions[0][1] == sorted_codon_substitutions[1][1]:
+                        if (sorted_codon_substitutions[0][1] == sorted_codon_substitutions[1][1]) and not (
+                                sorted_codon_substitutions[0][2] == sorted_codon_substitutions[1][2]):
                             # if df of the first possible substitutions are identical
                             if not self.lower_alternative and len(sorted_codon_substitutions) > 1:
                                 # choose the one with the higher frequency in target host if lower_alternative == False
