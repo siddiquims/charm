@@ -85,7 +85,7 @@ def plot_codon_usage(sequence, ax):#, prefix=None):
     else:
         ax.set_ylabel('codon usage [fraction]')
     ax.legend((p1, p2), ('Origin organism', 'Host organism'), loc=2, bbox_to_anchor=(1, 1))
-    ax.hlines(sequence.lower_threshold, 0, len(x1), colors='k', linestyles='dotted', **{'linewidth': 2})
+    ax.hlines(sequence.lower_threshold, 0, len(x1), colors='k', linestyles='solid', **{'linewidth': 1})
 
     if not sequence.use_frequency:
         major_locator = matplotlib.ticker.MultipleLocator(0.1)
