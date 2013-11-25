@@ -32,7 +32,7 @@ The current implementation differs from the described algorithm, though:
 
 Make sure you have all the necessary dependencies in place.
 
-**GNU/Linux users:** Use your distributions package manager to download and install Python and the dependency modules.
+**GNU/Linux users:** Use your distribution's package manager to download and install Python and the dependency modules.
 
 **Mac OS X users:** Download and install installer packages for Python and the dependencies from the respective
 download sites (see below).
