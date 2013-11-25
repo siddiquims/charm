@@ -120,7 +120,8 @@ class LibCHarm():
         """
 
         def __init__(self, sequence, origin_id, host_id, translation_table_origin=1, translation_table_host=1,
-                     use_frequency=False, lower_threshold=None):
+                     use_frequency=False, lower_threshold=None, strong_stop=True, lower_alternative=True,
+                     use_replacement_table=True):
 
             if not lower_threshold:
                 if use_frequency:
@@ -131,6 +132,10 @@ class LibCHarm():
                         self.lower_threshold = 0.1
             else:
                 self.lower_threshold = lower_threshold
+
+            self.strong_stop = strong_stop
+            self.lower_alternative = lower_alternative
+            self.use_replacement_table = use_replacement_table
 
             if translation_table_origin > 15 or translation_table_host > 15:
                 raise ValueError('Though the NCBI lists more than 15 translation tables, CHarm is limited to the '
@@ -238,26 +243,8 @@ class LibCHarm():
                                'aa': str(codon.translate(table=self.translation_table_origin))})
             return codons
 
-        def compute_replacement_table(self, strong_stop=True):
-            """
-            Generates a list of unique codons and harmonize their codon usage. This list is returned and can be used
-            to replace codons in a much longer list without the need to compute the codon substitution for every single
-            position.
-            """
-            unique_codons = []
-            unique_codons_triplets = []
-
-            for codon in self.codons:
-                if len(unique_codons) == 0:
-                    unique_codons_triplets.append(codon['original'])
-                    unique_codons.append(codon)
-
-                else:
-                    if codon['original'] not in unique_codons_triplets:
-                        unique_codons_triplets.append(codon['original'])
-                        unique_codons.append(codon)
-
-            for codon in unique_codons:
+        def sort_replacement_codons(self, codons):
+            for codon in codons:
 
                 aa = codon['aa']
                 orig_codon = str(codon['original'])
@@ -280,7 +267,7 @@ class LibCHarm():
                     f_target_new = self.usage_host.usage_table[aa][item]['f']
                     df_new = abs(origin_f - f_target_new)
 
-                    if aa == '*' and strong_stop:
+                    if aa == '*' and self.strong_stop:
                         stop_codons.append((item, df_new, f_target_new))
                     else:
                         if f_target_new < self.lower_threshold < origin_f:
@@ -295,37 +282,70 @@ class LibCHarm():
                             codon_substitutions.append((item, df_new, f_target_new))
 
                 if codon_substitutions:
-                    sorted_codon_substitutions = sorted(codon_substitutions, key=itemgetter(1))
+                    # sort the possible substitutions by df and frequency in target host
+                    sorted_codon_substitutions = sorted(codon_substitutions, key=itemgetter(1, 2))
 
-                    codon['final_df'] = sorted_codon_substitutions[0][1]
-                    codon['target_f'] = sorted_codon_substitutions[0][2]
-                    codon['new'] = sorted_codon_substitutions[0][0]
+                    chosen_codon_index = 0 # choose lowest df by default
+
+                    if len(codon_substitutions) >= 2:
+
+                        if sorted_codon_substitutions[0][1] == sorted_codon_substitutions[1][1]:
+                            # if df of the first possible substitutions are identical
+                            if not self.lower_alternative and len(sorted_codon_substitutions) > 1:
+                                # choose the one with the higher frequency in target host if lower_alternative == False
+                                chosen_codon_index += 1
+
+                    codon['final_df'] = sorted_codon_substitutions[chosen_codon_index][1]
+                    codon['target_f'] = sorted_codon_substitutions[chosen_codon_index][2]
+                    codon['new'] = sorted_codon_substitutions[chosen_codon_index][0]
 
                 else:
-                    if aa == '*' and strong_stop:
-                        sorted_stop_codons = sorted(stop_codons, key=itemgetter(2))
+                    if aa == '*' and self.strong_stop: # if this is a stop codon and we want a strong stop codon
+                        sorted_stop_codons = sorted(stop_codons, key=itemgetter(2)) # sort by frequency in target host
 
+                        # choose the codon with the highest usage frequency
                         codon['final_df'] = sorted_stop_codons[-1][1]
                         codon['target_f'] = sorted_stop_codons[-1][2]
                         codon['new'] = sorted_stop_codons[-1][0]
                     else:
+                        # if nothing fits better, leave the original codon in place
                         codon['final_df'] = df
                         codon['new'] = orig_codon
+            return codons
 
-            return unique_codons
+        def compute_replacement_table(self):
+            """
+            Generates a list of unique codons and harmonize their codon usage. This list is returned and can be used
+            to replace codons in a much longer list without the need to compute the codon substitution for every single
+            position.
+            """
+            unique_codons = []
+            unique_codons_triplets = []
+
+            for codon in self.codons:
+                if len(unique_codons) == 0:
+                    unique_codons_triplets.append(codon['original'])
+                    unique_codons.append(codon)
+
+                else:
+                    if codon['original'] not in unique_codons_triplets:
+                        unique_codons_triplets.append(codon['original'])
+                        unique_codons.append(codon)
+
+            return self.sort_replacement_codons(unique_codons)
 
 
-        def harmonize_codons(self, use_replacement_table=True, strong_stop=True):
+        def harmonize_codons(self):
             """
             Harmonizes the codon usage of self.original_sequence. This can either be done per codon or by
             computing a replacement table first (default). The second approach is much faster for long sequences but
             not as flexible.
             """
 
-            if use_replacement_table:
+            if self.use_replacement_table:
             # This is a much faster approach, but not as flexible as the substitution is only done per codon and cannot
             # be expanded to its surroundings.
-                codon_substitutions = self.compute_replacement_table(strong_stop)
+                codon_substitutions = self.compute_replacement_table()
                 for codon in self.codons:
                     for new_codon in codon_substitutions:
                         if codon['original'] == new_codon['original']:
@@ -334,49 +354,7 @@ class LibCHarm():
                                     codon[key] = value
 
             else:
-                for codon in self.codons:
-                    aa = codon['aa']
-                    orig_codon = str(codon['original'])
-
-                    origin_f = self.usage_origin.usage_table[aa][orig_codon]['f']
-                    target_f = self.usage_host.usage_table[aa][orig_codon]['f']
-
-                    df = abs(origin_f - target_f)
-                    new_codon = orig_codon
-
-                    codon['origin_f'] = origin_f
-                    codon['target_f'] = target_f
-                    codon['initial_df'] = df
-
-                    codon_substitutions = []
-
-                    for item in self.usage_host.usage_table[aa]:
-                        add = False
-                        if item != orig_codon:
-                            f_target_new = self.usage_host.usage_table[aa][item]['f']
-                            df_new = abs(origin_f - f_target_new)
-
-                            if f_target_new < self.lower_threshold < origin_f:
-                                add = False
-                            else:
-                                if df_new < df:
-                                    add = True
-                                elif target_f == 0:
-                                    add = True
-
-                        if add:
-                            codon_substitutions.append((item, df_new))
-                            #df = df_new
-                            #new_codon = item
-
-                    if codon_substitutions:
-                        sorted_codon_substitutions = sorted(codon_substitutions, key=itemgetter(1))
-
-                        codon['final_df'] = sorted_codon_substitutions[0][1]
-                        codon['new'] = sorted_codon_substitutions[0][0]
-                    else:
-                        codon['final_df'] = df
-                        codon['new'] = orig_codon
+                self.codons = self.sort_replacement_codons(self.codons)
 
             return self.codons
 
