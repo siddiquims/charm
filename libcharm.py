@@ -245,10 +245,17 @@ class LibCHarm():
             position.
             """
             unique_codons = []
+            unique_codons_triplets = []
 
             for codon in self.codons:
-                if codon not in unique_codons:
+                if len(unique_codons) == 0:
+                    unique_codons_triplets.append(codon['original'])
                     unique_codons.append(codon)
+
+                else:
+                    if codon['original'] not in unique_codons_triplets:
+                        unique_codons_triplets.append(codon['original'])
+                        unique_codons.append(codon)
 
             for codon in unique_codons:
 
@@ -259,7 +266,6 @@ class LibCHarm():
                 target_f = self.usage_host.usage_table[aa][orig_codon]['f']
 
                 df = abs(origin_f - target_f)
-                new_codon = orig_codon
 
                 codon['origin_f'] = origin_f
                 codon['target_f'] = target_f
@@ -319,9 +325,9 @@ class LibCHarm():
             if use_replacement_table:
             # This is a much faster approach, but not as flexible as the substitution is only done per codon and cannot
             # be expanded to its surroundings.
-                unique_codons = self.compute_replacement_table(strong_stop)
+                codon_substitutions = self.compute_replacement_table(strong_stop)
                 for codon in self.codons:
-                    for new_codon in unique_codons:
+                    for new_codon in codon_substitutions:
                         if codon['original'] == new_codon['original']:
                             for key, value in new_codon.items():
                                 if key != 'position':
