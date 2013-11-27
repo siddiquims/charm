@@ -37,3 +37,7 @@ nosetests.xml
 
 # PyCharm
 .idea/
+
+# Output of charm-cli
+*.log
+*.svg
