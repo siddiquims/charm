@@ -1,6 +1,4 @@
 # CHarm
-
-## Build status
 [![Build Status](https://travis-ci.org/Athemis/charm.png?branch=master)](https://travis-ci.org/Athemis/charm)
 
 ## About
