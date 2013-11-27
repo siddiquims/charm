@@ -1,5 +1,8 @@
 # CHarm
 
+## Build status
+[![Build Status](https://travis-ci.org/Athemis/charm.png?branch=master)](https://travis-ci.org/Athemis/charm)
+
 ## About
 
 CHarm is a tool harmonizing the codon usage in a DNA sequence prior to heterologous expression.
