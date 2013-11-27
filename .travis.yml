@@ -8,3 +8,4 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
   - echo $TRAVIS_PYTHON_VERSION
+  - nosetests
