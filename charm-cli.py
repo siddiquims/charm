@@ -23,7 +23,7 @@ except ImportError as e:
     print('ERROR: {}'.format(e.msg))
     exit(1)
 
-from libcharm import LibCHarm
+from LibCharm import LibCHarm
 
 
 def autolabel(rects, ax, labels, vertical=True):
