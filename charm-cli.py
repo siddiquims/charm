@@ -23,12 +23,15 @@ except ImportError as e:
     print('ERROR: {}'.format(e.msg))
     exit(1)
 
-from libcharm import LibCHarm
+from LibCharm.SequenceHandler import Sequence
+from LibCharm import IO
 
 
 def autolabel(rects, ax, labels, vertical=True):
     if vertical:
         rotation = 'vertical'
+    else:
+        rotation = 'horizontal'
 
     if len(labels) == len(rects):
         heights = []
@@ -219,7 +222,7 @@ def main():
         logger.warning(e.msg)
         pass
 
-    charm = LibCHarm()
+    #charm = LibCHarm()
 
     if args.translation_table_origin:
         translation_table_origin = args.translation_table_origin
@@ -238,12 +241,14 @@ def main():
     else:
         lower_threshold = 0.1
 
-    sequence = charm.Sequence(charm.open_input_file(args.input), args.origin, args.host,
-                              translation_table_origin=translation_table_origin,
-                              translation_table_host=translation_table_host,
-                              use_frequency=args.frequency,
-                              lower_threshold=lower_threshold,
-                              lower_alternative=args.lower_frequency_alternative)
+    sequence = Sequence(IO.load_file(args.input), args.origin, args.host,
+                        translation_table_origin=translation_table_origin,
+                        translation_table_host=translation_table_host,
+                        use_frequency=args.frequency,
+                        lower_threshold=lower_threshold,
+                        lower_alternative=args.lower_frequency_alternative)
+
+    #sequence = LibCharm.Sequence
 
     harmonized_codons = sequence.get_harmonized_codons()
     verify_sequence = sequence.verify_harmonized_sequence()
