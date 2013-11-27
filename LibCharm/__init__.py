@@ -1,1 +1,1 @@
-__all__ = ["IO", "SequenceHandler"]
+__all__ = ["IO", "Sequence", "CodonUsageTable"]

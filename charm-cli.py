@@ -23,7 +23,7 @@ except ImportError as e:
     print('ERROR: {}'.format(e.msg))
     exit(1)
 
-from LibCharm.SequenceHandler import Sequence
+from LibCharm.Sequence import Sequence
 from LibCharm import IO
 
 
