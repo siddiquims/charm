@@ -216,8 +216,7 @@ def plot(sequence, prefix=None):
 
     matplotlib.pyplot.savefig(filename, format='svg', orientation='landscape', papertype='a4')
 
-
-def main():
+def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
     parser.add_argument('-p', '--prefix', type=str, help='prefix for output files')
@@ -243,6 +242,9 @@ def main():
     parser.add_argument('input', type=str, help='input file in FASTA format')
     args = parser.parse_args()
 
+    return args
+
+def initialize_logger(prefix):
     logger = logging.getLogger('charm-cli')
     logger.setLevel(logging.INFO)
 
@@ -251,8 +253,8 @@ def main():
     logger.addHandler(ch)
 
     try:
-        if args.prefix:
-            log_filename = '{}_charm-cli.log'.format(args.prefix)
+        if prefix:
+            log_filename = '{}_charm-cli.log'.format(prefix)
         else:
             log_filename = 'charm-cli.log'
         fh = logging.FileHandler(log_filename, 'w')
@@ -264,7 +266,14 @@ def main():
         logger.warning(e.msg)
         pass
 
-    #charm = LibCHarm()
+    return logger
+
+
+
+def main():
+
+    args = parse_arguments()
+    logger = initialize_logger(args.prefix)
 
     if args.translation_table_origin:
         translation_table_origin = args.translation_table_origin
@@ -289,8 +298,6 @@ def main():
                         use_frequency=args.frequency,
                         lower_threshold=lower_threshold,
                         lower_alternative=args.lower_frequency_alternative)
-
-    #sequence = LibCharm.Sequence
 
     harmonized_codons = sequence.get_harmonized_codons()
     verify_sequence = sequence.verify_harmonized_sequence()
