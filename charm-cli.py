@@ -137,32 +137,43 @@ def plot_codon_usage_differences(sequence, ax):
     sequence - LibCharm.Sequence object
     ax       - matplotlib axis object
     """
+
+    # Generate a range of residues out of the length of the sequence array
     x1 = numpy.arange(len(sequence.codons))
 
+    # Set the threshold according to use_frequency
     if sequence.use_frequency:
         threshold = 5
     else:
         threshold = 0.2
 
+    # Set width of bars
     bar_width = 0.8
+    # Initialize array of labels for the x axis
     xlabels = []
 
+    # Initialize arrays of data and labels for the bars
     df = []
     bar_labels = []
 
+    # walk over the codons in sequence
     for c in sequence.codons:
+        # add final_df to data array
         df.append(c['final_df'])
+        # add residue to xlabels
         xlabels.append(c['aa'])
+        # generate bar label and add to list
         label = u'{} → {}'.format(c['original'], c['new'])
         bar_labels.append(label)
 
+    # convert lists to numpy arrays
     bar_labels = numpy.array(bar_labels)
-
     df = numpy.array(df)
-
+    # find bars that exceed the threshold
     mask1 = numpy.ma.where(df > threshold)
     mask2 = numpy.ma.where(df <= threshold)
 
+    # plot and color bars accordingly
     p1 = ax.bar(x1[mask1], df[mask1], color='r', width=bar_width)
     autolabel(p1, ax, bar_labels[mask1], vertical=True)
 
@@ -209,14 +220,20 @@ def plot(sequence, prefix=None):
     else:
         filename = 'charm_results.svg'
 
+    # Create a plot with two subplots
     fig, axarr = matplotlib.pyplot.subplots(2, figsize=(50, 20), dpi=300)
 
+    # Actually plot data
     plot_codon_usage(sequence, axarr[0])
     plot_codon_usage_differences(sequence, axarr[1])
 
+    # Save plot as svg
     matplotlib.pyplot.savefig(filename, format='svg', orientation='landscape', papertype='a4')
 
 def parse_arguments():
+    """
+    Parse command line arguments and return list of arguments
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
     parser.add_argument('-p', '--prefix', type=str, help='prefix for output files')
