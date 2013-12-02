@@ -262,6 +262,10 @@ def parse_arguments():
     return args
 
 def initialize_logger(prefix):
+    """
+    Initialization of logging subsystem. Two logging handlers are brought up:
+    'fh' which logs to a log file and 'ch' which logs to standard output.
+    """
     logger = logging.getLogger('charm-cli')
     logger.setLevel(logging.INFO)
 
@@ -288,10 +292,16 @@ def initialize_logger(prefix):
 
 
 def main():
+    """
+    Main function of charm-cli.py.
+    """
 
+    # Parse command line arguments
     args = parse_arguments()
+    # Initialize logging
     logger = initialize_logger(args.prefix)
 
+    # Set translation tables according to user input. Defaults to standard genetic code (table 1)
     if args.translation_table_origin:
         translation_table_origin = args.translation_table_origin
     else:
@@ -302,6 +312,7 @@ def main():
     else:
         translation_table_host = 1
 
+    # set threshold if provided by the user and otherwise fall back to defaults
     if args.threshold:
         lower_threshold = args.threshold
     elif args.frequency:
@@ -309,6 +320,7 @@ def main():
     else:
         lower_threshold = 0.1
 
+    # initialize Sequence object with user provided input
     sequence = Sequence(IO.load_file(args.input), args.origin, args.host,
                         translation_table_origin=translation_table_origin,
                         translation_table_host=translation_table_host,
@@ -316,9 +328,12 @@ def main():
                         lower_threshold=lower_threshold,
                         lower_alternative=args.lower_frequency_alternative)
 
+    # harmonize the provided sequence
     harmonized_codons = sequence.get_harmonized_codons()
+    # check if input and output sequence are identical
     verify_sequence = sequence.verify_harmonized_sequence()
 
+    # log summary to standard output and log file
     logger.info('SUMMARY:\n')
     if verify_sequence:
         text = 'Success! Translation of harmonized and original sequence match:\n\n' \
@@ -351,10 +366,9 @@ def main():
 
     logger.info('\nCodon-harmonized sequence:\n\n{}'.format(sequence.harmonized_sequence))
 
-    #    logger.info('Plotting data. Resulting files will be prefixed with \'{}\''.format(args.prefix))
-
     plot(sequence, args.prefix)
 
+    # Exit gracefully
     exit(0)
 
 
