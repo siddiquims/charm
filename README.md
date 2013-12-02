@@ -39,7 +39,7 @@ Make sure you have all the necessary dependencies in place.
 download sites (see below).
 
 **Windows users:** Installers for Python and the necessary modules are available at the respective download sites
-(see below). Alternetively, if you are member of a degree granting educational institution (e.g. university), you can
+(see below). Alternatively, if you are member of a degree granting educational institution (e.g. university), you can
 apply for a free license of [Enthought Canopy][6] which will provide you with a full-flavored Python environment
 including all necessary additional packages.
 
