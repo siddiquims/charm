@@ -14,11 +14,11 @@ def load_file(filename, file_format="fasta"):
     try:
         content = SeqIO.read(filename, file_format, IUPAC.unambiguous_dna)
     except ValueError as e:
-        print('ERROR: {}'.format(e.msg))
+        print('ERROR: {}'.format(e))
         try:
             content = SeqIO.read(filename, file_format, IUPAC.unambiguous_rna)
         except ValueError as e:
-            print('ERROR: {}'.format(e.msg))
+            print('ERROR: {}'.format(e))
             exit(1)
 
     if content:

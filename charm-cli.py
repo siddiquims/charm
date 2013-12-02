@@ -180,12 +180,14 @@ def plot_codon_usage_differences(sequence, ax):
     p2 = ax.bar(x1[mask2], df[mask2], color='b', width=bar_width)
     autolabel(p2, ax, bar_labels[mask2], vertical=True)
 
+    # hide top and right axis
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.tick_params(axis='both', which='both', direction='out')
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
+    # set x axis labels to be centered and to use a monospaced font
     ax.set_xticks(x1 + bar_width / 2)
     ax.set_xticklabels(xlabels, **{'family': 'monospace'})
     ax.set_xlabel('amino acid')
