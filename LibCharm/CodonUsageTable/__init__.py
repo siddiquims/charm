@@ -47,26 +47,28 @@ class CodonUsageTable():
 
         request = Request(self.url)
         try:
+            # attempt to recieve the html file from the server
             opener = urlopen(request)
         except URLError as e:
+            # if this fails, print an error and exit
             if hasattr(e, 'reason'):
                 print('Failed to reach server: %s' % e.reason)
             if hasattr(e, 'code'):
                 print('Server responded with HTTP error code: %s' % e.code)
             exit(1)
-
+            # otherwise read the file and hand over to BeautifulSoup for parsing
         response = opener.read()
         soup = BeautifulSoup(response)
 
-        # Parse the HTML response and look for <pre></pre> section, containing the usage table
+        # Parse the HTML response and look for a <pre></pre> section containing the usage table
         table_string = str(soup.pre)
 
         table_string = table_string.replace('<pre>\n', '')  # remove <pre></pre> tags
         table_string = table_string.replace('\n</pre>', '') #
 
-        table_lines = table_string.split('\n') # Split in lines
+        table_lines = table_string.split('\n') # Split in lines at the linebreak '\n'
         for line in table_lines: # Iterate over the lines
-            lines = line.split(')') # Splitting the lines at ")" will result in substrings representing the
+            lines = line.split(')') # Splitting the lines at ")" will result in substrings representing a
             # a single codon each
             for codon_raw in lines:
                 codon_raw = codon_raw.strip() # strip whitespace characters from the substring
