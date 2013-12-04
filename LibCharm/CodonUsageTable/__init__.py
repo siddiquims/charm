@@ -2,12 +2,21 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError
 
 try:
+    # BeautifulSoup is used for parsing the HTML formatted codon usage tables on 'http://www.kazusa.or.jp/codon/'
     from bs4 import BeautifulSoup
 except ImportError as e:
     print('ERROR: {}'.format(e.msg))
     exit(1)
 
+
 class CodonUsageTable():
+    """
+    Provides a representation of a specific codon usage table
+    url             - String; URL from which the usage table can be obtained.
+                      Usually http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?species=<id>&aa=<num>&style=N
+    use_frequency   - Boolean; Defines whether usage frequencies/1000 are used instead of fractions. Defaults to 'False'
+    """
+
     def __init__(self, url, use_frequency=False):
         self.url = url
         self.usage_table = {}
@@ -18,6 +27,9 @@ class CodonUsageTable():
     def add_to_table(self, codon, aa, frequency):
         """
         Add codon and usage frequency to table
+        codon     - String; e.g. 'ATG'
+        aa        - String; Corresponding amino acid (e.g. 'M')
+        frequency - Float: Usage fraction or frequency/1000
         """
 
         if aa in self.usage_table:
@@ -39,10 +51,9 @@ class CodonUsageTable():
         except URLError as e:
             if hasattr(e, 'reason'):
                 print('Failed to reach server: %s' % e.reason)
-            elif hasattr(e, 'code'):
+            if hasattr(e, 'code'):
                 print('Server responded with HTTP error code: %s' % e.code)
-            else:
-                print(opener)
+            exit(1)
 
         response = opener.read()
         soup = BeautifulSoup(response)

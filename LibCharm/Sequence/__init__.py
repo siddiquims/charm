@@ -127,6 +127,7 @@ class Sequence():
         cds      - Whether the input sequence is a coding region or not
         to_stop  - Only translate up to the first stop codon
         """
+        translated_sequence = None
         try:
             translated_sequence = sequence.translate(table=translation_table, cds=cds, to_stop=to_stop)
         except CodonTable.TranslationError as e:
