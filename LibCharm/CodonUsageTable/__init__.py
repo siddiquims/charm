@@ -23,7 +23,6 @@ class CodonUsageTable():
         self.use_frequency = use_frequency
         self.fetch_codon_usage_table()
 
-
     def add_to_table(self, codon, aa, frequency):
         """
         Add codon and usage frequency to table
@@ -49,6 +48,8 @@ class CodonUsageTable():
         try:
             # attempt to recieve the html file from the server
             opener = urlopen(request)
+            response = opener.read()
+            soup = BeautifulSoup(response)
         except URLError as e:
             # if this fails, print an error and exit
             if hasattr(e, 'reason'):
@@ -57,30 +58,29 @@ class CodonUsageTable():
                 print('Server responded with HTTP error code: %s' % e.code)
             exit(1)
             # otherwise read the file and hand over to BeautifulSoup for parsing
-        response = opener.read()
-        soup = BeautifulSoup(response)
 
         # Parse the HTML response and look for a <pre></pre> section containing the usage table
         table_string = str(soup.pre)
 
         table_string = table_string.replace('<pre>\n', '')  # remove <pre></pre> tags
-        table_string = table_string.replace('\n</pre>', '') #
+        table_string = table_string.replace('\n</pre>', '')
 
-        table_lines = table_string.split('\n') # Split in lines at the linebreak '\n'
-        for line in table_lines: # Iterate over the lines
-            lines = line.split(')') # Splitting the lines at ")" will result in substrings representing a
+        table_lines = table_string.split('\n')  # Split in lines at the linebreak '\n'
+        for line in table_lines:  # Iterate over the lines
+            lines = line.split(')')  # Splitting the lines at ")" will result in substrings representing a
             # a single codon each
             for codon_raw in lines:
-                codon_raw = codon_raw.strip() # strip whitespace characters from the substring
+                codon_raw = codon_raw.strip()  # strip whitespace characters from the substring
 
-                codon = codon_raw[:3].strip().replace('U', 'T') # The first three characters are the codon
+                codon = codon_raw[:3].strip().replace('U', 'T')  # The first three characters are the codon
                 if codon:
-                    aa = codon_raw[4:5].strip() # Position 5 is the aa in one letter code
-                    fraction = float(codon_raw[6:10].strip()) # position 6 to 10 is the fraction;
+                    aa = codon_raw[4:5].strip()  # Position 5 is the aa in one letter code
+                    fraction = float(codon_raw[6:10].strip())  # position 6 to 10 is the fraction;
 
-                    frequency = float(codon_raw[11:15].strip()) # position 11 to 14 is the usage frequency/1000
+                    frequency = float(codon_raw[11:15].strip())  # position 11 to 14 is the usage frequency/1000
                     # convert to float
                     if self.use_frequency:
+                        # add either frequency or fraction to the codon table
                         self.add_to_table(codon, aa, frequency)
                     else:
                         self.add_to_table(codon, aa, fraction)

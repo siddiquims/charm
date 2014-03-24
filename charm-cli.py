@@ -106,7 +106,7 @@ def plot_codon_usage(sequence, ax):
     ax.get_yaxis().tick_left()
     # position xticks and labels on x axis to be centered for both bars
     ax.set_xticks(x1 + bar_width / 2)
-    ax.set_xticklabels(xlabels)
+    ax.set_xticklabels(xlabels, **{'family': 'monospace'})
     ax.set_xlabel('amino acid')
     # add a legend to the plot
     ax.legend((p1, p2), ('Origin organism', 'Host organism'), loc=2, bbox_to_anchor=(1, 1))
@@ -232,6 +232,7 @@ def plot(sequence, prefix=None):
     # Save plot as svg
     matplotlib.pyplot.savefig(filename, format='svg', orientation='landscape', papertype='a4')
 
+
 def parse_arguments():
     """
     Parse command line arguments and return list of arguments
@@ -263,6 +264,7 @@ def parse_arguments():
 
     return args
 
+
 def initialize_logger(prefix):
     """
     Initialization of logging subsystem. Two logging handlers are brought up:
@@ -290,7 +292,6 @@ def initialize_logger(prefix):
         pass
 
     return logger
-
 
 
 def main():
@@ -350,19 +351,32 @@ def main():
     logger.info(table_header)
 
     for c in sequence.codons:
-        if str(c['original']) != str(c['new']):
-            line = '{:<10} {:^3} {:<4} -> {:<4} {:<5.2f} -> {:<3.2f}  {:<5.2f} -> {:<3.2f}'.format(c['position'],
-                                                                                                   c['aa'],
-                                                                                                   c['original'],
-                                                                                                   c['new'],
-                                                                                                   c['initial_df'],
-                                                                                                   c['final_df'],
-                                                                                                   c['origin_f'],
-                                                                                                   c['target_f'])
+        if c['ambiguous']:
+            if str(c['original']) != str(c['new']):
+                line = '{:<10} {:^3} {:<4} -> {:<4} {:<5.2f} -> {:<3.2f}  {:<5.2f} -> {:<3.2f} WARNING: Original ' \
+                       'codon was ambiguous!'.format(c['position'], c['aa'], c['original'], c['new'],
+                                                     c['initial_df'], c['final_df'], c['origin_f'], c['target_f'])
+            else:
+                line = '{:<10} {:^3} {:<12} {:<5.2f}          {:<5.2f} -> {:<3.2f} WARNING: Original ' \
+                       'codon was ambiguous!'.format(c['position'], c['aa'], c['original'], c['initial_df'],
+                                                     c['origin_f'], c['target_f'])
         else:
-            line = '{:<10} {:^3} {:<12} {:<5.2f}          {:<5.2f} -> {:<3.2f}'.format(c['position'], c['aa'],
-                                                                                       c['original'], c['initial_df'],
-                                                                                       c['origin_f'], c['target_f'])
+            if str(c['original']) != str(c['new']):
+                line = '{:<10} {:^3} {:<4} -> {:<4} {:<5.2f} -> {:<3.2f}  {:<5.2f} -> {:<3.2f}'.format(c['position'],
+                                                                                                       c['aa'],
+                                                                                                       c['original'],
+                                                                                                       c['new'],
+                                                                                                       c['initial_df'],
+                                                                                                       c['final_df'],
+                                                                                                       c['origin_f'],
+                                                                                                       c['target_f'])
+            else:
+                line = '{:<10} {:^3} {:<12} {:<5.2f}          {:<5.2f} -> {:<3.2f}'.format(c['position'],
+                                                                                           c['aa'],
+                                                                                           c['original'],
+                                                                                           c['initial_df'],
+                                                                                           c['origin_f'],
+                                                                                           c['target_f'])
 
         logger.info(line)
 

@@ -4,6 +4,7 @@ try:
     from Bio.Seq import Seq
     from Bio.Alphabet import IUPAC
     from Bio.Data import CodonTable
+    from Bio.Data import IUPACData
 except ImportError as e:
     print('ERROR: {}'.format(e.msg))
     exit(1)
@@ -18,7 +19,7 @@ class Sequence():
 
     def __init__(self, sequence, origin_id, host_id, translation_table_origin=1, translation_table_host=1,
                  use_frequency=False, lower_threshold=None, strong_stop=True, lower_alternative=True,
-                 use_replacement_table=True):
+                 use_replacement_table=True, use_highest_frequency_if_ambiguous=True):
         """
         Initialize the Sequence object
         sequence                    - DNA or RNA sequence as Bio.Seq object or string. This can for example be
@@ -47,8 +48,8 @@ class Sequence():
         use_replacement_table       - Boolean; If true, do not compute the harmonization for every single codon in the
                                       sequence, but for every unique codon in the sequence. This is done by default as
                                       it is much faster.
+        use_highest_frequency_if_ambiguous - If the sequence contains ambigous codons (e.g. GCN),
         """
-
 
         # setting threshold if provided, otherwise fall back to defaults
         if not lower_threshold:
@@ -66,34 +67,35 @@ class Sequence():
         self.lower_alternative = lower_alternative
         self.use_replacement_table = use_replacement_table
         self.use_frequency = use_frequency
+        self.use_highest_frequency_if_ambiguous = use_highest_frequency_if_ambiguous
+
+        self.ambiguous_dna_letters = list(set(IUPACData.ambiguous_dna_letters) - set(IUPACData.unambiguous_dna_letters))
 
         # check if translation table id is > 15. Values > 15 cannot be mapped to http://www.kazusa.or.jp/codon/!
         if translation_table_origin > 15 or translation_table_host > 15:
             raise ValueError('Though the NCBI lists more than 15 translation tables, CHarm is limited to the '
                              'first 15 as listed on \'http://www.kazusa.or.jp/codon/\'.')
-            # Set translation table for original sequence
-        self.translation_table_origin = CodonTable.unambiguous_dna_by_id[int(translation_table_origin)]
-        self.translation_table_host = CodonTable.unambiguous_dna_by_id[int(translation_table_host)]
+        # Set translation table for original sequence
+        self.translation_table_origin = CodonTable.ambiguous_dna_by_id[int(translation_table_origin)]
+        self.translation_table_host = CodonTable.ambiguous_dna_by_id[int(translation_table_host)]
         # Reformat and sanitize sequence string (remove whitespaces, change to uppercase)
         if type(sequence) is 'str':
             try:
                 # if a string is provided, check if it contains U and not T to distinguish between RNA and DNA
                 if 'U' in sequence and not 'T' in sequence:
-                    seq = Seq(''.join(sequence.upper().split()), IUPAC.unambiguous_rna)
+                    seq = Seq(''.join(sequence.upper().split()), IUPAC.ambiguous_rna)
                     # if RNA, convert to DNA alphabet
                     self.original_sequence = seq.back_transcribe()
                 else:
-                    self.original_sequence = Seq(''.join(sequence.upper().split()), IUPAC.unambiguous_dna)
+                    self.original_sequence = Seq(''.join(sequence.upper().split()), IUPAC.ambiguous_dna)
             except ValueError as e:
                 print('ERROR: {}'.format(e))
                 exit(1)
         else:
             self.original_sequence = sequence
-
         self.original_translated_sequence = self.translate_sequence(self.original_sequence,
                                                                     self.translation_table_origin, cds=True)
         self.harmonized_sequence = ''
-        self.codons = self.split_original_sequence_to_codons()
 
         self.usage_origin = CodonUsageTable('http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?'
                                             'species={}&aa={}&style=N'.format(origin_id,
@@ -103,11 +105,11 @@ class Sequence():
                                           'species={}&aa={}&style=N'.format(host_id,
                                                                             translation_table_host),
                                           self.use_frequency)
+        self.codons = self.split_original_sequence_to_codons()
         self.harmonize_codons()
         self.harmonized_sequence = self.construct_new_sequence()
         self.harmonized_translated_sequence = self.translate_sequence(self.harmonized_sequence,
                                                                       self.translation_table_host, cds=True)
-
 
     @staticmethod
     def chunks(string, n):
@@ -127,6 +129,7 @@ class Sequence():
         cds      - Whether the input sequence is a coding region or not
         to_stop  - Only translate up to the first stop codon
         """
+
         translated_sequence = None
         try:
             translated_sequence = sequence.translate(table=translation_table, cds=cds, to_stop=to_stop)
@@ -145,11 +148,10 @@ class Sequence():
         """
         harmonized_codons = []
         for codon in self.codons:
-            if str(codon['original']) != str(codon['new']):
+            if str(codon['original']) != str(codon['new']) or codon['ambiguous']:
                 harmonized_codons.append(codon)
 
         return harmonized_codons
-
 
     def split_original_sequence_to_codons(self):
         """
@@ -173,15 +175,43 @@ class Sequence():
 
         for codon in self.chunks(self.original_sequence, 3):
             position += 1
+            aa = str(codon.translate(table=self.translation_table_origin))
+
             codons.append({'position': int(position),
                            'original': str(codon),
+                           'ambiguous': None,
                            'new': None,
                            'origin_f': None,
                            'target_f': None,
                            'initial_df': None,
                            'final_df': None,
-                           'aa': str(codon.translate(table=self.translation_table_origin))})
+                           'aa': aa})
         return codons
+
+    def choose_wobble_codon(self, usage_table, codon, aa, highest_f):
+
+        #codons = usage_table[aa].keys()
+        codons = []
+        for k in IUPACData.ambiguous_dna_values.keys():
+            if k in self.ambiguous_dna_letters:
+                values = list(IUPACData.ambiguous_dna_values[k])
+                for v in values:
+                    if k in codon:
+                        codons.append(codon.replace(k, v))
+
+        max_f = [None, 0.0]
+        min_f = [None, 100.0]
+        for c in codons:
+            f = usage_table[aa][c]['f']
+            if f > max_f[1]:
+                max_f = [c, f]
+            if f < min_f[1]:
+                min_f = [c, f]
+
+        if highest_f:
+            return max_f
+        else:
+            return min_f
 
     def sort_replacement_codons(self, codons):
 
@@ -190,8 +220,15 @@ class Sequence():
             aa = codon['aa']
             orig_codon = str(codon['original'])
 
-            origin_f = self.usage_origin.usage_table[aa][orig_codon]['f']
-            target_f = self.usage_host.usage_table[aa][orig_codon]['f']
+            if str(codon['original'])[-1] in self.ambiguous_dna_letters:
+                orig_unambiguous_codon = self.choose_wobble_codon(self.usage_origin.usage_table, orig_codon, aa,
+                                                                  self.use_highest_frequency_if_ambiguous)[0]
+                codon['ambiguous'] = True
+            else:
+                orig_unambiguous_codon = orig_codon
+
+            origin_f = self.usage_origin.usage_table[aa][orig_unambiguous_codon]['f']
+            target_f = self.usage_host.usage_table[aa][orig_unambiguous_codon]['f']
 
             df = abs(origin_f - target_f)
 
@@ -204,7 +241,6 @@ class Sequence():
 
             for item in self.usage_host.usage_table[aa]:
 
-                add = False
                 f_target_new = self.usage_host.usage_table[aa][item]['f']
                 df_new = abs(origin_f - f_target_new)
 
@@ -216,7 +252,7 @@ class Sequence():
                     else:
                         if df_new < df:
                             add = True
-                        else:# target_f == 0:
+                        else:  # target_f == 0:
                             add = True
 
                     if add:
@@ -226,12 +262,12 @@ class Sequence():
                 # sort the possible substitutions by df and frequency in target host
                 sorted_codon_substitutions = sorted(codon_substitutions, key=itemgetter(1, 2))
 
-                chosen_codon_index = 0 # choose lowest df by default
+                chosen_codon_index = 0  # choose lowest df by default
 
                 if len(codon_substitutions) >= 2:
 
-                    if (sorted_codon_substitutions[0][1] == sorted_codon_substitutions[1][1]) and not (
-                            sorted_codon_substitutions[0][2] == sorted_codon_substitutions[1][2]):
+                    if (sorted_codon_substitutions[0][1] == sorted_codon_substitutions[1][1]) and not \
+                            (sorted_codon_substitutions[0][2] == sorted_codon_substitutions[1][2]):
                         # if df of the first possible substitutions are identical
                         if not self.lower_alternative and len(sorted_codon_substitutions) > 1:
                             # choose the one with the higher frequency in target host if lower_alternative == False
@@ -242,8 +278,8 @@ class Sequence():
                 codon['new'] = sorted_codon_substitutions[chosen_codon_index][0]
 
             else:
-                if aa == '*' and self.strong_stop: # if this is a stop codon and we want a strong stop codon
-                    sorted_stop_codons = sorted(stop_codons, key=itemgetter(2)) # sort by frequency in target host
+                if aa == '*' and self.strong_stop:  # if this is a stop codon and we want a strong stop codon
+                    sorted_stop_codons = sorted(stop_codons, key=itemgetter(2))  # sort by frequency in target host
 
                     # choose the codon with the highest usage frequency
                     codon['final_df'] = sorted_stop_codons[-1][1]
@@ -252,7 +288,7 @@ class Sequence():
                 else:
                     # if nothing fits better, leave the original codon in place
                     codon['final_df'] = df
-                    codon['new'] = orig_codon
+                    codon['new'] = orig_unambiguous_codon
         return codons
 
     def compute_replacement_table(self):
@@ -265,17 +301,11 @@ class Sequence():
         unique_codons_triplets = []
 
         for codon in self.codons:
-            if len(unique_codons) == 0:
+            if len(unique_codons) == 0 or codon['original'] not in unique_codons_triplets:
                 unique_codons_triplets.append(codon['original'])
                 unique_codons.append(codon)
 
-            else:
-                if codon['original'] not in unique_codons_triplets:
-                    unique_codons_triplets.append(codon['original'])
-                    unique_codons.append(codon)
-
         return self.sort_replacement_codons(unique_codons)
-
 
     def harmonize_codons(self):
         """
@@ -285,8 +315,8 @@ class Sequence():
         """
 
         if self.use_replacement_table:
-        # This is a much faster approach, but not as flexible as the substitution is only done per codon and cannot
-        # be expanded to its surroundings.
+            # This is a much faster approach, but not as flexible as the substitution is only done per codon and cannot
+            # be expanded to its surroundings.
             codon_substitutions = self.compute_replacement_table()
             for codon in self.codons:
                 for new_codon in codon_substitutions:
@@ -299,7 +329,6 @@ class Sequence():
             self.codons = self.sort_replacement_codons(self.codons)
 
         return self.codons
-
 
     def construct_new_sequence(self):
         """

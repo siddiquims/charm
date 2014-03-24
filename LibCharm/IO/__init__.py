@@ -1,9 +1,11 @@
 try:
     from Bio import SeqIO
+    from Bio.Data import CodonTable
     from Bio.Alphabet import IUPAC
 except ImportError as e:
     print('ERROR: {}'.format(e.msg))
     exit(1)
+
 
 def load_file(filename, file_format="fasta"):
     """
@@ -14,12 +16,12 @@ def load_file(filename, file_format="fasta"):
     content = None
     try:
         # assume sequence is DNA
-        content = SeqIO.read(filename, file_format, IUPAC.unambiguous_dna)
+        content = SeqIO.read(filename, file_format, IUPAC.ambiguous_dna)
     except ValueError as e:
         # if this fails, try RNA instead
         print('ERROR: {}'.format(e))
         try:
-            content = SeqIO.read(filename, file_format, IUPAC.unambiguous_rna)
+            content = SeqIO.read(filename, file_format, IUPAC.ambiguous_rna)
         except ValueError as e:
             # if this fails, too, raise exception and exit with error code 1
             print('ERROR: {}'.format(e))
