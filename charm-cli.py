@@ -270,7 +270,8 @@ def initialize_logger(prefix):
     Initialization of logging subsystem. Two logging handlers are brought up:
     'fh' which logs to a log file and 'ch' which logs to standard output.
 
-    :param prefix: prefix that is added to the filename
+    :param prefix:  prefix that is added to the filename
+    :return logger: return a logger instance
     """
     logger = logging.getLogger('charm-cli')
     logger.setLevel(logging.INFO)
