@@ -353,37 +353,41 @@ def main():
                                                                                 'initial', 'final', 'origin', 'target')
     logger.info(table_header)
 
+    warnings = []
+
+    # Iterate over all codons in the sequence and print some statistics and information
     for c in sequence.codons:
-        if c['ambiguous']:
-            if str(c['original']) != str(c['new']):
-                line = '{:<10} {:^3} {:<4} -> {:<4} {:<5.2f} -> {:<3.2f}  {:<5.2f} -> {:<3.2f} WARNING: Original ' \
-                       'codon was ambiguous!'.format(c['position'], c['aa'], c['original'], c['new'],
-                                                     c['initial_df'], c['final_df'], c['origin_f'], c['target_f'])
-            else:
-                line = '{:<10} {:^3} {:<12} {:<5.2f}          {:<5.2f} -> {:<3.2f} WARNING: Original ' \
-                       'codon was ambiguous!'.format(c['position'], c['aa'], c['original'], c['initial_df'],
-                                                     c['origin_f'], c['target_f'])
+        if str(c['original']) != str(c['new']):
+            line = '{:<10} {:^3} {:<4} -> {:<4} {:<5.2f} -> {:<3.2f}  {:<5.2f} -> {:<3.2f}'.format(c['position'],
+                                                                                                   c['aa'],
+                                                                                                   c['original'],
+                                                                                                   c['new'],
+                                                                                                   c['initial_df'],
+                                                                                                   c['final_df'],
+                                                                                                   c['origin_f'],
+                                                                                                   c['target_f'])
         else:
-            if str(c['original']) != str(c['new']):
-                line = '{:<10} {:^3} {:<4} -> {:<4} {:<5.2f} -> {:<3.2f}  {:<5.2f} -> {:<3.2f}'.format(c['position'],
-                                                                                                       c['aa'],
-                                                                                                       c['original'],
-                                                                                                       c['new'],
-                                                                                                       c['initial_df'],
-                                                                                                       c['final_df'],
-                                                                                                       c['origin_f'],
-                                                                                                       c['target_f'])
-            else:
-                line = '{:<10} {:^3} {:<12} {:<5.2f}          {:<5.2f} -> {:<3.2f}'.format(c['position'],
-                                                                                           c['aa'],
-                                                                                           c['original'],
-                                                                                           c['initial_df'],
-                                                                                           c['origin_f'],
-                                                                                           c['target_f'])
+            line = '{:<10} {:^3} {:<12} {:<5.2f}          {:<5.2f} -> {:<3.2f}'.format(c['position'],
+                                                                                       c['aa'],
+                                                                                       c['original'],
+                                                                                       c['initial_df'],
+                                                                                       c['origin_f'],
+                                                                                       c['target_f'])
+        if c['ambiguous']:
+            line += ' WARNING: Original codon is ambiguous!'
+            warnings.append('Codon {} ({}) coding for {} is ambiguous! {} was chosen for the '
+                            'harmonized sequence!'.format(c['position'],
+                                                          c['original'],
+                                                          c['aa'],
+                                                          c['new']))
 
         logger.info(line)
 
     logger.info('\nCodon-harmonized sequence:\n\n{}'.format(sequence.harmonized_sequence))
+    if warnings:
+        logger.warn('\nWARNINGS OCCURRED DURING HARMONIZATION:\n')
+        for warning in warnings:
+            logger.warn(warning)
 
     plot(sequence, args.prefix)
 
