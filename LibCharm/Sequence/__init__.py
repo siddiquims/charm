@@ -48,7 +48,9 @@ class Sequence():
         use_replacement_table       - Boolean; If true, do not compute the harmonization for every single codon in the
                                       sequence, but for every unique codon in the sequence. This is done by default as
                                       it is much faster.
-        use_highest_frequency_if_ambiguous - If the sequence contains ambigous codons (e.g. GCN),
+        use_highest_frequency_if_ambiguous - Boolean: If the sequence contains ambiguous codons (e.g. GCN), always
+                                             assume that the most frequent unambiguous codon is used. If set to 'False',
+                                             the least frequent unambiguous codon will be used.
         """
 
         # setting threshold if provided, otherwise fall back to defaults
@@ -69,6 +71,8 @@ class Sequence():
         self.use_frequency = use_frequency
         self.use_highest_frequency_if_ambiguous = use_highest_frequency_if_ambiguous
 
+        # generate a list of ambiguous DNA letters only (IUPACData.ambiguous_dna_letters also includes the unambiguous
+        # G, C, A and T.
         self.ambiguous_dna_letters = list(set(IUPACData.ambiguous_dna_letters) - set(IUPACData.unambiguous_dna_letters))
 
         # check if translation table id is > 15. Values > 15 cannot be mapped to http://www.kazusa.or.jp/codon/!
@@ -93,10 +97,13 @@ class Sequence():
                 exit(1)
         else:
             self.original_sequence = sequence
+        # Translate original DNA sequence to amino acid sequence
         self.original_translated_sequence = self.translate_sequence(self.original_sequence,
                                                                     self.translation_table_origin, cds=True)
+        # Initialize empty harmonize sequence
         self.harmonized_sequence = ''
 
+        # Fetch codon usage tables for original and host organism
         self.usage_origin = CodonUsageTable('http://www.kazusa.or.jp/codon/cgi-bin/showcodon.cgi?'
                                             'species={}&aa={}&style=N'.format(origin_id,
                                                                               translation_table_origin),
@@ -105,9 +112,13 @@ class Sequence():
                                           'species={}&aa={}&style=N'.format(host_id,
                                                                             translation_table_host),
                                           self.use_frequency)
+        # Split DNA sequence into list of codons
         self.codons = self.split_original_sequence_to_codons()
+        # Harmonize codon usage
         self.harmonize_codons()
+        # Construct new sequence out of harmonized codons
         self.harmonized_sequence = self.construct_new_sequence()
+        # Translate harmonized DNA sequence to amino acid sequence
         self.harmonized_translated_sequence = self.translate_sequence(self.harmonized_sequence,
                                                                       self.translation_table_host, cds=True)
 

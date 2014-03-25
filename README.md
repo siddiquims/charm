@@ -45,7 +45,7 @@ including all necessary additional packages.
 
 **Dependencies**
 
- - [Python 3.3][7]    (tested with Python 3.3)
+ - [Python 3][7]      (tested with Python 3.3)
  - [NumPy][8]         (tested with NumPy 1.8.0)
  - [Biopython][9]     (tested with Biopython 1.63)
  - [matplotlib][10]   (tested with matplotlib 1.3.1)
