@@ -1,3 +1,4 @@
+"""Provides methods to generate and use codon usage tables from http://www.kazusa.or.jp/codon"""
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
@@ -26,9 +27,9 @@ class CodonUsageTable():
     def add_to_table(self, codon, aa, frequency):
         """
         Add codon and usage frequency to table
-        codon     - String; e.g. 'ATG'
-        aa        - String; Corresponding amino acid (e.g. 'M')
-        frequency - Float: Usage fraction or frequency/1000
+        :param codon:      String; e.g. 'ATG'
+        :param aa:         String; Corresponding amino acid (e.g. 'M')
+        :param frequency:  Float: Usage fraction or frequency/1000
         """
 
         if aa in self.usage_table:
@@ -48,16 +49,17 @@ class CodonUsageTable():
         try:
             # attempt to recieve the html file from the server
             opener = urlopen(request)
-            response = opener.read()
-            soup = BeautifulSoup(response)
-        except URLError as e:
+        except URLError as error:
             # if this fails, print an error and exit
-            if hasattr(e, 'reason'):
-                print('Failed to reach server: %s' % e.reason)
-            if hasattr(e, 'code'):
-                print('Server responded with HTTP error code: %s' % e.code)
+            if hasattr(error, 'reason'):
+                print('Failed to reach server: %s' % error.reason)
+            if hasattr(error, 'code'):
+                print('Server responded with HTTP error code: %s' % error.code)
             exit(1)
             # otherwise read the file and hand over to BeautifulSoup for parsing
+
+        response = opener.read()
+        soup = BeautifulSoup(response)
 
         # Parse the HTML response and look for a <pre></pre> section containing the usage table
         table_string = str(soup.pre)

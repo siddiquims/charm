@@ -1,3 +1,4 @@
+"""Handling of sequences an generating harmonized sequences"""
 from operator import itemgetter
 
 try:
@@ -92,8 +93,8 @@ class Sequence():
                     self.original_sequence = seq.back_transcribe()
                 else:
                     self.original_sequence = Seq(''.join(sequence.upper().split()), IUPAC.ambiguous_dna)
-            except ValueError as e:
-                print('ERROR: {}'.format(e))
+            except ValueError as error:
+                print('ERROR: {}'.format(error))
                 exit(1)
         else:
             self.original_sequence = sequence
@@ -126,8 +127,8 @@ class Sequence():
     def chunks(string, n):
         """
         Produce n-character chunks from string.
-        string  - string to be sliced
-        n       - number of characters per chunk
+        :param string:   string to be sliced
+        :param n:        number of characters per chunk
         """
         for start in range(0, len(string), n):
             yield string[start:start + n]
@@ -136,20 +137,22 @@ class Sequence():
         """
         Translate a given DNA or RNA sequence into an amino acid sequence.
 
-        sequence - The input sequence as Bio.Seq object
-        cds      - Whether the input sequence is a coding region or not
-        to_stop  - Only translate up to the first stop codon
+        :param sequence:             The input sequence as Bio.Seq object
+        :param translation_table:    NCBI translation table id to be used as int
+        :param cds:                  Whether the input sequence is a coding region or not
+        :param to_stop:              Only translate up to the first stop codon
+        :return translated_sequence: Translation of DNA sequence as string
         """
 
         translated_sequence = None
         try:
             translated_sequence = sequence.translate(table=translation_table, cds=cds, to_stop=to_stop)
-        except CodonTable.TranslationError as e:
-            print("Error during translation: ", e)
+        except CodonTable.TranslationError as error:
+            print("Error during translation: ", error)
             print("This might be just fine if an additional stop codon was found at the end of the sequence.")
             return self.translate_sequence(sequence, translation_table, cds=False, to_stop=True)
-        except KeyError as e:
-            print("Error during translation: ", e)
+        except KeyError as error:
+            print("Error during translation: ", error)
             exit(1)
         return translated_sequence
 
@@ -200,8 +203,15 @@ class Sequence():
         return codons
 
     def choose_wobble_codon(self, usage_table, codon, aa, highest_f):
+        """
+        Choose an unambiguous codon if the original codon is ambiguous. If highest_f is 'True',
+        the codon with the highest frequency in the original organism is used as a reference.
 
-        #codons = usage_table[aa].keys()
+        :param usage_table: Usage table as provided by self.usage_origin.usage_table or self.usage_host.usage_table
+        :param codon:       The ambiguous codon as string
+        :param aa:          The amino acid translation of the codon
+        :param highest_f:   If 'True', use the highest frequency codon in the original organism as reference
+        """
         codons = []
         for k in IUPACData.ambiguous_dna_values.keys():
             if k in self.ambiguous_dna_letters:
@@ -225,6 +235,13 @@ class Sequence():
             return min_f
 
     def sort_replacement_codons(self, codons):
+        """
+        Rank the possible replacements for the original codons by the difference in usage frequency in the original and
+        host organism
+
+        :param codons: List of codons
+        :return codons: Ranked list of codons
+        """
 
         for codon in codons:
 
