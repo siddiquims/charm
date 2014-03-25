@@ -171,17 +171,16 @@ class Sequence():
         """
         Splits the sequence into codons.
 
-        returns list 'codons' with
-        position   - position of codon in the sequence (1 ... end)
-        original   - original codon
-        new        - new codon after harmonization
-        origin_f   - usage frequency/fraction of the original codon in the origin organism
-        target_f   - usage frequency/fraction of the new codon in the target host
-        initial_df - difference in usage frequency/fraction of the original codon between origin organism and target
-                     host
-        final_df   - difference in usage frequency/fraction of the original codon in the origin organism and the
-                     new codon after harmonization in the target host
-        aa         - amino acid coded by the codon
+        :return codons:     position   - position of codon in the sequence (1 ... end)
+                            original   - original codon
+                            new        - new codon after harmonization
+                            origin_f   - usage frequency/fraction of the original codon in the origin organism
+                            target_f   - usage frequency/fraction of the new codon in the target host
+                            initial_df - difference in usage frequency/fraction of the original codon between
+                            origin organism and target host
+                            final_df   - difference in usage frequency/fraction of the original codon in the
+                            origin organism and the new codon after harmonization in the target host
+                            aa         - amino acid coded by the codon
         """
 
         codons = []
