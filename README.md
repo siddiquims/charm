@@ -57,11 +57,11 @@ including all necessary additional packages.
  ```bash
  python --version
  ```
- 
+
  This should result in e.g. 'Python 3.4.0'
  2. Open http://www.kazusa.or.jp/codon in a web browser of your choice and navigate to the codon usage tables both of
  the organism of origin and the expression host. Note down the id numbers as they appear in the navigation bar
- ("[..]?species=XXXX"). For *E. coli* the id is '83333'.
+ ("[..]?species=XXXX"). For *E. coli (K12)* the id is '83333'.
  3. Save the sequence to be harmonized (DNA/RNA) in FASTA format.
  4. Run the harmonization with default options:
 
