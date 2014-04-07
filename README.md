@@ -62,10 +62,13 @@ including all necessary additional packages.
  ("[..]?species=XXXX"). For *E. coli* the id is '83333'.
  3. Save the sequence to be harmonized (DNA/RNA) in FASTA format.
  4. Run the harmonization with default options:
+ 
  ```bash
  python ./charm-cli.py <id origin> <id host> <path to sequence file>
  ```
+
  To see all available options, run
+
  ```bash
  python ./charm-cli.py --help
  ```
