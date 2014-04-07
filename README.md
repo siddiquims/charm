@@ -53,9 +53,11 @@ including all necessary additional packages.
 ### Usage of charm-cli.py
 
  1. Open a terminal. You can check whether the python executable is available by executing
+
  ```bash
  python --version
  ```
+ 
  This should result in e.g. 'Python 3.4.0'
  2. Open http://www.kazusa.or.jp/codon in a web browser of your choice and navigate to the codon usage tables both of
  the organism of origin and the expression host. Note down the id numbers as they appear in the navigation bar
