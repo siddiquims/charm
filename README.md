@@ -50,6 +50,25 @@ including all necessary additional packages.
  - [Biopython][9]     (tested with Biopython 1.63)
  - [matplotlib][10]   (tested with matplotlib 1.3.1)
 
+### Usage of charm-cli.py
+
+ 1. Open a terminal. You can check whether the python executable is available by executing
+ ```bash
+ python --version
+ ```
+ This should result in e.g. 'Python 3.4.0'
+ 2. Open http://www.kazusa.or.jp/codon in a web browser of your choice and navigate to the codon usage tables both the
+ organism of origin and the expression host. Note down the id numbers as they appear in the navigation bar
+ ("[..]?species=XXXX"). For *E. coli* the id is '83333'.
+ 3. Save the sequence to be harmonized (DNA/RNA) in FASTA format.
+ 4. Run the harmonization with default options:
+ ```bash
+ python ./charm-cli.py <id origin> <id host> <path to sequence file>
+ ```
+ To see all available options, run
+ ```bash
+ python ./charm-cli.py --help
+ ```
   
 
 ----------
