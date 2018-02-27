@@ -45,10 +45,12 @@ including all necessary additional packages.
 
 **Dependencies**
 
- - [Python 3][7]      (tested with Python 3.3)
- - [NumPy][8]         (tested with NumPy 1.8.0)
- - [Biopython][9]     (tested with Biopython 1.63)
- - [matplotlib][10]   (tested with matplotlib 1.3.1)
+ - [Python 3][7]        (tested with Python 3.6.3)
+ - [NumPy][8]           (tested with NumPy 1.14.1)
+ - [Biopython][9]       (tested with Biopython 1.70)
+ - [matplotlib][10]     (tested with matplotlib 2.1.2)
+ - [html5lib][11]       (tested with html5lib 1.0.1)
+ - [BeautifulSoup4][12] (tested with BeautifulSoup 4.6.0)
 
 ### Usage of charm-cli.py
 
@@ -59,10 +61,13 @@ including all necessary additional packages.
  ```
 
  This should result in e.g. 'Python 3.4.0'
+
  2. Open http://www.kazusa.or.jp/codon in a web browser of your choice and navigate to the codon usage tables both of
  the organism of origin and the expression host. Note down the id numbers as they appear in the navigation bar
  ("[..]?species=XXXX"). For *E. coli (K12)* the id is '83333'.
+
  3. Save the sequence to be harmonized (DNA/RNA) in FASTA format.
+
  4. Run the harmonization with default options:
 
  ```bash
@@ -96,3 +101,5 @@ doi:10.1002/pro.5560051003
   [8]: http://www.numpy.org "NumPy"
   [9]: http://www.biopython.org "Biopython"
   [10]: http://www.matplotlib.org "Matplotlib"
+  [11]: https://www.crummy.com/software/BeautifulSoup
+  [12]: https://github.com/html5lib/html5lib-python
