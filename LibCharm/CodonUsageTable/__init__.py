@@ -59,13 +59,15 @@ class CodonUsageTable():
             # otherwise read the file and hand over to BeautifulSoup for parsing
 
         response = opener.read()
-        soup = BeautifulSoup(response)
+        soup = BeautifulSoup(response, 'html5lib')
 
         # Parse the HTML response and look for a <pre></pre> section containing the usage table
         table_string = str(soup.pre)
 
-        table_string = table_string.replace('<pre>\n', '')  # remove <pre></pre> tags
+        table_string = table_string.replace('<pre>\n', '')  # remove <pre> and </pre> tags
+        table_string = table_string.replace('<pre>', '')    # unfortunately, they are not formatted consequently
         table_string = table_string.replace('\n</pre>', '')
+        table_string = table_string.replace('</pre>', '')
 
         table_lines = table_string.split('\n')  # Split in lines at the linebreak '\n'
         for line in table_lines:  # Iterate over the lines

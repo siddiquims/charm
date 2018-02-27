@@ -201,7 +201,7 @@ def plot_codon_usage_differences(sequence, ax):
         major_locator = matplotlib.ticker.MultipleLocator(10)
         minor_locator = matplotlib.ticker.MultipleLocator(1)
 
-    ax.legend((p1, p2), (u'df > {}'.format(threshold), u'df ≤ {}'.format(threshold)), loc=2, bbox_to_anchor=(1, 1))
+    ax.legend((p1, p2), (u'Δf > {}'.format(threshold), u'Δf ≤ {}'.format(threshold)), loc=2, bbox_to_anchor=(1, 1))
 
     ax.yaxis.set_major_locator(major_locator)
     ax.yaxis.set_minor_locator(minor_locator)
@@ -348,6 +348,18 @@ def main():
     else:
         logger.error('ERROR: Translations of harmonized and original sequence DO NOT match!')
     logger.info('Harmonized codons: {}\n'.format(len(harmonized_codons)))
+
+    df_above_thresh = 0
+    for c in sequence.codons:
+        if c['final_df'] > 0.2:
+            df_above_thresh += 1
+
+    if df_above_thresh > 0:
+        logger.warning("WARNING: Difference in origin and target host codon usage of {} out of {} codons ({}%) exceeds 20%!\n".format(df_above_thresh,
+                                                                                                                                      len(sequence.codons),
+                                                                                                                                      round(df_above_thresh/len(sequence.codons)*100, 1)))
+    else:
+        logger.info("Differences of codon usage in origin and target host are within 20%.\n")
 
     table_header = '{:<10} {:^3} {:^4}    {:^4} {:^7} {:>6} {:<7} {:>6}'.format('position', 'aa', 'orig', 'new',
                                                                                 'initial', 'final', 'origin', 'target')
