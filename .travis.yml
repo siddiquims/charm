@@ -7,4 +7,4 @@ install:
     
 script:
   - echo $TRAVIS_PYTHON_VERSION
-  - nosetests
+  - pytest
