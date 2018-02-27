@@ -1,0 +1,5 @@
+numpy
+Biopython
+matplotlib
+beautifulsoup
+nose

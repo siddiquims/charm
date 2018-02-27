@@ -1,10 +1,10 @@
 language: python
 python:
-  - "3.3"
+  - "3.6"
 
 install:
-    - pip install numpy Biopython matplotlib beautifulsoup4
-
+    - pip install -r requirements.txt
+    
 script:
   - echo $TRAVIS_PYTHON_VERSION
   - nosetests
