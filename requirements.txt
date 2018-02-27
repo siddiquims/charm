@@ -1,4 +1,5 @@
 numpy
 Biopython
 matplotlib
+html5lib
 beautifulsoup4
