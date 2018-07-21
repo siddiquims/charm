@@ -3,3 +3,5 @@ Biopython
 matplotlib
 html5lib
 beautifulsoup4
+pytest
+
